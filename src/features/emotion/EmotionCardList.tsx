@@ -5,18 +5,21 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import SectionTitle from "@/components/SectionTitle";
 import { ROUTES } from "@/constants/routes";
+import { Waves, CloudDrizzle, Flame, Shuffle, Moon, Zap, Sprout, Circle, Sparkles, BatteryLow } from "lucide-react";
+import type { ElementType } from "react";
+import { useSessionStore } from "@/store/sessionStore";
 
-const ITEMS = [
-  { label: "불안", sub: "막연한 긴장감, 걱정", color: "#f4845f" },
-  { label: "무기력", sub: "의욕 없음, 아무것도 하기 싫음", color: "#7ec8e3" },
-  { label: "짜증", sub: "작은 일에도 화가 남", color: "#ff6b6b" },
-  { label: "혼란", sub: "뭘 원하는지 모르겠음", color: "#c3aed6" },
-  { label: "외로움", sub: "소속감 부족, 고립된 느낌", color: "#6c8ead" },
-  { label: "초조함", sub: "성과 압박, 시간 압박", color: "#ffb347" },
-  { label: "의욕", sub: "에너지 올라감, 뭔가 하고 싶음", color: "#77dd77" },
-  { label: "공허함", sub: "채워지지 않는 느낌", color: "#b0a4a4" },
-  { label: "설렘", sub: "기대감, 두근거림", color: "#ffc38f" },
-  { label: "지침", sub: "몸과 마음이 모두 피곤함", color: "#9e9e9e" },
+const ITEMS: { label: string; sub: string; color: string; Icon: ElementType }[] = [
+  { label: "불안", sub: "막연한 긴장감, 걱정", color: "#f4845f", Icon: Waves },
+  { label: "무기력", sub: "의욕 없음, 아무것도 하기 싫음", color: "#7ec8e3", Icon: CloudDrizzle },
+  { label: "짜증", sub: "작은 일에도 화가 남", color: "#ff6b6b", Icon: Flame },
+  { label: "혼란", sub: "뭘 원하는지 모르겠음", color: "#c3aed6", Icon: Shuffle },
+  { label: "외로움", sub: "소속감 부족, 고립된 느낌", color: "#6c8ead", Icon: Moon },
+  { label: "초조함", sub: "성과 압박, 시간 압박", color: "#ffb347", Icon: Zap },
+  { label: "의욕", sub: "에너지 올라감, 뭔가 하고 싶음", color: "#77dd77", Icon: Sprout },
+  { label: "공허함", sub: "채워지지 않는 느낌", color: "#b0a4a4", Icon: Circle },
+  { label: "설렘", sub: "기대감, 두근거림", color: "#ffc38f", Icon: Sparkles },
+  { label: "지침", sub: "몸과 마음이 모두 피곤함", color: "#9e9e9e", Icon: BatteryLow },
 ];
 
 const PAGE_SIZE = 5;
@@ -35,6 +38,7 @@ export default function EmotionCardList() {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
+  const setEmotionStore = useSessionStore((s) => s.setEmotion);
 
   const updateEmotion = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -49,6 +53,7 @@ export default function EmotionCardList() {
       router.push(`${ROUTES.LOADING}?${params.toString()}`);
     } else {
       setSelected(globalIndex);
+      setEmotionStore(ITEMS[globalIndex].label);
       updateEmotion(ITEMS[globalIndex].label);
     }
   };
@@ -67,7 +72,7 @@ export default function EmotionCardList() {
   const pageItems = ITEMS.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="flex w-(--ui-content-width) flex-col gap-4">
+    <div className="flex w-full max-w-(--ui-content-width) flex-col gap-4">
       <SectionTitle>지금 느끼는 감정을 골라보세요</SectionTitle>
 
       {/* 카드 슬라이드 영역 */}
@@ -87,7 +92,7 @@ export default function EmotionCardList() {
             onDragEnd={handleDragEnd}
             className="flex cursor-grab flex-col gap-2 active:cursor-grabbing"
           >
-            {pageItems.map(({ label, sub, color }, i) => {
+            {pageItems.map(({ label, sub, color, Icon }, i) => {
               const globalIndex = page * PAGE_SIZE + i;
               return (
                 <motion.div
@@ -95,18 +100,23 @@ export default function EmotionCardList() {
                   onClick={() => handleCardClick(globalIndex)}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                  className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+                  className="flex items-center gap-4 rounded-2xl bg-white/65 px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
                   style={{
                     border:
                       selected === globalIndex
                         ? `1px solid ${color}`
-                        : "1px solid transparent",
+                        : "1px solid rgba(255,255,255,0.5)",
                   }}
                 >
                   <div
-                    className="h-11 w-11 shrink-0 rounded-full"
-                    style={{ background: color }}
-                  />
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                    style={{
+                      background: `radial-gradient(circle at 35% 35%, ${color}88, ${color})`,
+                      boxShadow: `0 0.25rem 0.75rem ${color}40`,
+                    }}
+                  >
+                    <Icon size={20} strokeWidth={2} color="white" />
+                  </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-base font-bold text-[#1a1a1a]">
                       {label}

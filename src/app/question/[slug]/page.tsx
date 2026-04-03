@@ -15,5 +15,6 @@ export default async function QuestionDetailPage({
 
   if (!question) notFound();
 
-  return <QuestionDetail question={question} />;
+  const { Icon: _, ...serializable } = question;
+  return <QuestionDetail question={serializable} />;
 }

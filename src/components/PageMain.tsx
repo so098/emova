@@ -1,6 +1,6 @@
 export default function PageMain({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-24">
+    <main className="flex flex-1 items-center justify-center px-4 pb-[var(--ui-bottom-bar-height)]">
       {children}
     </main>
   );

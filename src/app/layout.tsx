@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import AppChrome from "@/components/AppChrome";
+import AuthProvider from "@/components/AuthProvider";
+import { ToastProvider } from "@/components/ToastStack";
 
 const pretendard = localFont({
   src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -24,15 +26,22 @@ export default function RootLayout({
   return (
     <html lang="ko" className={pretendard.variable}>
       <body className="font-pretendard antialiased">
-        <div className="relative z-10 mx-auto min-h-dvh">
-          {/* 고정 UI — 페이지 전환 시 유지 */}
-          <Suspense>
-            <AppChrome />
-          </Suspense>
+        <div className="noise-layer" aria-hidden="true" />
+        <AuthProvider>
+        <ToastProvider>
+          <div className="relative z-10 mx-auto flex min-h-dvh flex-col">
+            {/* 고정 UI — 페이지 전환 시 유지 */}
+            <Suspense>
+              <AppChrome />
+            </Suspense>
 
-          {/* 페이지별 가운데 콘텐츠 */}
-          <Suspense>{children}</Suspense>
-        </div>
+            {/* 페이지별 콘텐츠 — 헤더 아래 남은 공간 채움 */}
+            <Suspense>
+              <div className="flex flex-1 flex-col">{children}</div>
+            </Suspense>
+          </div>
+        </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

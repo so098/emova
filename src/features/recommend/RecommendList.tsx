@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { fetchRecommendations, type Recommendation } from "@/app/recommend/actions";
 import { ROUTES } from "@/constants/routes";
 import CelebrationToast from "@/components/CelebrationToast";
+import { useQuestStore, getNextId, today } from "@/store/questStore";
 
 interface RecommendListProps {
   questionLabel: string;
@@ -32,12 +33,31 @@ export default function RecommendList({
       prev.includes(i) ? prev.filter((v) => v !== i) : [...prev, i]
     );
 
+  const addShortQuests = useQuestStore((s) => s.addShortQuests);
+
   const handleDone = () => {
+    // 선택한 추천 + 직접 입력을 퀘스트 store에 추가
+    const dateStr = today();
+    const newQuests = [
+      ...selected.map((i) => ({
+        id: getNextId(),
+        title: items[i].title,
+        date: dateStr,
+        points: 20,
+        done: false,
+        source: "ai" as const,
+      })),
+      ...(customValue.trim()
+        ? [{ id: getNextId(), title: customValue.trim(), date: dateStr, points: 20, done: false, source: "user" as const }]
+        : []),
+    ];
+    if (newQuests.length > 0) addShortQuests(newQuests);
+
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowToast(true);
     timerRef.current = setTimeout(() => {
       setShowToast(false);
-      router.push(ROUTES.QUEST);
+      router.push(`${ROUTES.QUEST}?tab=단기`);
     }, 3000);
   };
 
@@ -57,6 +77,7 @@ export default function RecommendList({
         visible={showToast}
         message="퀘스트 추가완료!"
         sub="이제 퀘스트 창에서 확인해볼까요?"
+        duration={3000}
       />
 
       <div className="flex w-full max-w-[26rem] flex-col gap-4">
@@ -79,9 +100,9 @@ export default function RecommendList({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
                   onClick={() => handleSelect(i)}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-white/80 px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-colors"
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg transition-colors"
                   style={{
-                    border: selected.includes(i) ? "1px solid var(--ui-button-primary)" : "1px solid transparent",
+                    border: selected.includes(i) ? "1px solid var(--ui-button-primary)" : "1px solid rgba(255,255,255,0.5)",
                   }}
                 >
                   <div

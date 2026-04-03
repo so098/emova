@@ -29,10 +29,15 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#e0e0e0]/60 transition-opacity hover:opacity-80"
         style={{ background: open ? "var(--brand-logo)" : "var(--brand-deco-circle)" }}
       >
         <Bell size={14} color="var(--ui-button-primary)" strokeWidth={2.2} />
+        {MESSAGES.length > 0 && !open && (
+          <span className="absolute -right-1 -bottom-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff4d4d] px-1 text-[0.625rem] font-bold leading-none text-white">
+            {MESSAGES.length}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
@@ -42,12 +47,12 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            className="absolute right-0 top-10 z-30 flex w-[15rem] flex-col gap-[0.375rem] rounded-2xl border border-[#FFE8CC] bg-[#FFFAF4] p-3 shadow-[0_8px_24px_rgba(255,148,55,0.12)]"
+            className="absolute right-0 top-10 z-30 flex w-[15rem] flex-col gap-[0.375rem] rounded-2xl border border-[#e0e0e0]/70 bg-white/75 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.1)] backdrop-blur-xl"
           >
             {MESSAGES.map(({ icon: Icon, title, desc }, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2.5 rounded-xl bg-white px-3 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+                className="flex items-start gap-2.5 rounded-xl bg-white/80 px-3 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
               >
                 <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FFF3DC]">
                   <Icon size={12} color="var(--ui-button-primary)" strokeWidth={2} />

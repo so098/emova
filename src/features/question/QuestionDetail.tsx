@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import type { Question } from "@/constants/questions";
 import { useSessionStore } from "@/store/sessionStore";
 
-export default function QuestionDetail({ question }: { question: Question }) {
+export default function QuestionDetail({ question }: { question: Omit<Question, "Icon"> }) {
   const [text, setText] = useState("");
   const setSession = useSessionStore((s) => s.setSession);
 
@@ -40,7 +40,7 @@ export default function QuestionDetail({ question }: { question: Question }) {
           }}
           placeholder="자유롭게 적어보세요..."
           className="w-full max-w-(--ui-content-width) resize-none rounded-2xl bg-white/80 px-5 py-4 text-sm leading-relaxed text-[#1a1a1a] shadow-[0_2px_12px_rgba(0,0,0,0.06)] outline-none placeholder:text-[#cccccc] focus:shadow-[0_2px_16px_rgba(0,0,0,0.1)]"
-          style={{ minHeight: "25rem" }}
+          style={{ minHeight: "20rem", maxHeight: "calc(100dvh - 22rem)" }}
         />
       </main>
     </>

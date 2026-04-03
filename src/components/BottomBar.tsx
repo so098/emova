@@ -34,7 +34,7 @@ export default function BottomBar() {
   };
 
   return (
-    <div className="absolute bottom-8 left-1/2 flex w-(--ui-content-width) -translate-x-1/2 flex-col gap-3">
+    <div className="fixed bottom-8 left-1/2 z-20 flex w-full max-w-(--ui-content-width) -translate-x-1/2 px-4 flex-col gap-3">
       {/* 인디케이터 선 4개 */}
       <div className="flex w-full gap-2">
         {Array.from({ length: TOTAL }).map((_, i) => (

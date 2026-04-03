@@ -18,12 +18,12 @@ export default function QuestionList() {
   const showMore = () => setVisible((v) => Math.min(v + STEP, QUESTIONS.length));
 
   return (
-    <div className="flex w-(--ui-content-width) flex-col gap-4">
+    <div className="flex w-full max-w-(--ui-content-width) flex-col gap-4">
       <SectionTitle>지금 감정에 맞는 질문을 골라보세요</SectionTitle>
 
       <div className="flex flex-col gap-2">
         <AnimatePresence initial={false}>
-          {QUESTIONS.slice(0, visible).map(({ label, sub, color }, i) => (
+          {QUESTIONS.slice(0, visible).map(({ label, sub, color, Icon }, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 10 }}
@@ -35,9 +35,17 @@ export default function QuestionList() {
                 router.push(qs ? `/question/${slug}?${qs}` : `/question/${slug}`);
               }}
               whileTap={{ scale: 0.97 }}
-              className="flex cursor-pointer items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-transparent"
+              className="flex cursor-pointer items-center gap-4 rounded-2xl border border-white/50 bg-white/65 px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
             >
-              <div className="h-11 w-11 shrink-0 rounded-full" style={{ background: color }} />
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                style={{
+                  background: `radial-gradient(circle at 35% 35%, ${color}88, ${color})`,
+                  boxShadow: `0 0.25rem 0.75rem ${color}40`,
+                }}
+              >
+                <Icon size={20} strokeWidth={2} color="white" />
+              </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-base font-bold text-[#1a1a1a]">{label}</span>
                 <span className="text-xs text-[#666666]">{sub}</span>

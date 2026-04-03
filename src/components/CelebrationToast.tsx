@@ -7,6 +7,8 @@ interface CelebrationToastProps {
   visible: boolean;
   message: string;
   sub: string;
+  /** 프로그레스 바 지속 시간 (ms). 0이면 숨김 */
+  duration?: number;
 }
 
 const COLORS = ["#FF9437", "#FFC38F", "#77dd77", "#c3aed6", "#ff6b6b", "#7ec8e3", "#ffb347", "#ffc38f"];
@@ -29,7 +31,7 @@ function useParticles(count: number) {
   );
 }
 
-export default function CelebrationToast({ visible, message, sub }: CelebrationToastProps) {
+export default function CelebrationToast({ visible, message, sub, duration = 0 }: CelebrationToastProps) {
   const particles = useParticles(28);
 
   return (
@@ -65,6 +67,17 @@ export default function CelebrationToast({ visible, message, sub }: CelebrationT
           <div className="flex flex-col items-center gap-1 rounded-2xl bg-white px-6 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.14)]">
             <span className="text-base font-bold text-[#1a1a1a]">{message}</span>
             <span className="text-sm text-[#999999]">{sub}</span>
+            {duration > 0 && (
+              <div className="mt-2 h-[0.1875rem] w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: "var(--ui-button-primary)" }}
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: duration / 1000, ease: "linear" }}
+                />
+              </div>
+            )}
           </div>
         </motion.div>
       )}
