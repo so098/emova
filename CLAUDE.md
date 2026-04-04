@@ -116,6 +116,14 @@
 - 새 컴포넌트는 `src/components/`에 생성
 - 클라이언트 컴포넌트는 파일 상단에 `"use client"` 명시
 
+### 컴포넌트 내부 작성 순서
+
+1. state (`useState`, `useRef` 등)
+2. hook (기존 훅 → custom hook 순)
+3. `useEffect`
+4. 함수 (이벤트 핸들러, 유틸 등)
+5. JSX (`return`)
+
 ### Tailwind v4 CSS 변수 사용 규칙
 
 - Tailwind 클래스에서 CSS 변수를 색상으로 쓰려면 반드시 `@theme inline` 블록에 `--color-*` 접두사로 등록해야 한다
