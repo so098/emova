@@ -12,7 +12,7 @@
 | survey_sessions | - | 미구현 |
 | survey_emotions | - | 미구현 |
 | survey_thought | - | 미구현 |
-| retrospectives | - | 미구현 (ReflectPage 목 데이터 사용 중) |
+| reflections | - | 미구현 (ReflectPage 목 데이터 사용 중) |
 | xp_ledger | - | 미구현 (rewardStore 메모리만) |
 | survey_actions | - | 미구현 |
 | action_catalog | - | 미구현 |
@@ -60,16 +60,16 @@
 
 ---
 
-### 3순위: 회고 API — `retrospectiveApi.ts`
+### 3순위: 회고 API — `reflectionApi.ts`
 
 감정 before/after 변화 기록. 현재 ReflectPage가 목 데이터(`MOCK_ENTRIES`)로 동작 중.
 
-**테이블:** `retrospectives`
+**테이블:** `reflections`
 
 **함수:**
-- `insertRetrospective(sessionId, questId, beforeEmotion, afterEmotion, notes)` — 회고 저장
-- `fetchRetrospectives()` — 회고 목록 조회
-- `fetchRetrospectiveBySession(sessionId)` — 세션별 회고 조회
+- `insertReflection(sessionId, questId, beforeEmotion, afterEmotion, notes)` — 회고 저장
+- `fetchReflections()` — 회고 목록 조회
+- `fetchReflectionBySession(sessionId)` — 세션별 회고 조회
 
 **연동 위치:** `ReflectPage` — 회고 작성 완료 시 insert, 목록 조회 시 fetch
 

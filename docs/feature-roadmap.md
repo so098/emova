@@ -21,7 +21,7 @@
 
 ## AI 기능 강화 (미정)
 
-- AI 회고 피드백 (retrospectives.ai_feedback)
+- AI 회고 피드백 (reflections.ai_feedback)
 - 감정 분석 요약
 - 맞춤형 미션 추천 고도화
 

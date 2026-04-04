@@ -8,11 +8,11 @@
 
 ```
 survey_sessions (세션)
-  ├── survey_thought     (생각 선택)
+  ├── survey_thought     (생각 선택, 세션당 1개)
   ├── survey_emotions    (감정 선택)
-  ├── survey_desires     (욕구/질문 답변)
+  ├── survey_desires     (욕구/질문 답변, 세션당 1개)
   ├── survey_actions     (추천 행동 기록)
-  ├── retrospectives     (회고)
+  ├── reflections        (회고)
   ├── quests             (퀘스트 인스턴스)
   └── xp_ledger          (XP 적립)
 
@@ -22,6 +22,7 @@ action_catalog (행동 마스터)
 ```
 
 모든 데이터는 `session_id`로 하나의 플로우에 묶인다.
+모든 사용자 식별은 `client_id` (= Supabase `auth.uid()`) 하나로 통일.
 
 ---
 
@@ -34,25 +35,27 @@ action_catalog (행동 마스터)
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | 세션 ID |
-| client_id | uuid | 익명 사용자 ID (auth.uid) |
-| user_id | uuid | OAuth 사용자 ID (미래) |
+| client_id | uuid | 사용자 ID (auth.uid) |
 | status | text | `in_progress` / `completed` / `aborted` |
 | started_at | timestamptz | 세션 시작 시각 |
 | completed_at | timestamptz | 완료 시각 |
 | aborted_at | timestamptz | 중단 시각 |
+| updated_at | timestamptz | 마지막 수정 시각 |
 
 **생명주기:** 그리드 선택 시 생성 → 추천 완료 시 completed → 중도 이탈 시 aborted
+
+**인덱스:** `(client_id, status)` 복합 인덱스
 
 ---
 
 ### 2. survey_thought — 생각 선택
 
-그리드에서 선택한 "요즘 자주 드는 생각".
+그리드에서 선택한 "요즘 자주 드는 생각". **세션당 1개** (UNIQUE 제약).
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | |
-| session_id | uuid (FK) | 소속 세션 |
+| session_id | uuid (FK, UNIQUE) | 소속 세션 (세션당 1개) |
 | client_id | uuid | |
 | key | text | 생각 키 (`unknown`, `procrastinate`, `apathy`, `remotive`, `stimulate`, `custom`) |
 | custom_text | text | key가 `custom`일 때 직접 입력 텍스트 |
@@ -78,7 +81,7 @@ action_catalog (행동 마스터)
 
 ### 4. survey_desires — 욕구/질문 답변
 
-질문 페이지에서 사용자가 작성한 답변.
+질문 페이지에서 사용자가 작성한 답변. **세션당 1개** (UNIQUE 제약).
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -171,30 +174,32 @@ AI 추천 행동 + 사용자 직접 입력 행동. **세션마다 누적된다.*
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | |
-| client_id | uuid | |
-| user_id | uuid | |
+| client_id | uuid | 사용자 ID |
 | session_id | uuid (FK) | 생성 출처 세션 |
 | title | text | 퀘스트 제목 |
 | description | text | |
-| source | text | 출처 (`survey`, 기타) |
+| source | text | 출처 (`survey`, `user`, `ai`) |
 | status | enum | `pending` / `in_progress` / `done` / `expired` |
+| category | text | `단기` / `장기` / `보류` (기본: `단기`) |
 | origin_category | text | 원래 카테고리 (보류 이동 시 기억용) |
 | due_at | timestamptz | 기한 |
 | xp_reward | int | 완료 시 XP (기본 5) |
 | created_at | timestamptz | |
 | completed_at | timestamptz | |
+| updated_at | timestamptz | 마지막 수정 시각 |
+
+**인덱스:** `(client_id, category)`, `(client_id, status)` 복합 인덱스
 
 ---
 
-### 9. retrospectives — 회고
+### 9. reflections — 회고
 
 퀘스트 수행 후 감정 변화 기록.
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | |
-| client_id | uuid | |
-| user_id | uuid | |
+| client_id | uuid | 사용자 ID |
 | session_id | uuid (FK) | |
 | quest_id | uuid (FK) | 회고 대상 퀘스트 |
 | before_emotion | text | 수행 전 감정 |
@@ -212,8 +217,7 @@ AI 추천 행동 + 사용자 직접 입력 행동. **세션마다 누적된다.*
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | |
-| client_id | uuid | |
-| user_id | uuid | |
+| client_id | uuid | 사용자 ID |
 | delta | int | 변동량 (+/-) |
 | reason | text | 사유 (퀘스트 완료, 회고 작성 등) |
 | session_id | uuid (FK) | |
@@ -229,7 +233,9 @@ AI 추천 행동 + 사용자 직접 입력 행동. **세션마다 누적된다.*
 | 001_create_tables.sql | 전체 테이블 + enum 생성 | 적용됨 |
 | 002_enable_rls.sql | RLS 활성화 | 적용됨 |
 | 003_add_origin_category.sql | quests에 origin_category 추가 | 적용됨 |
-| 004_alter_enums_to_text.sql | thought_key, emotion_key enum → text 변환 | **미적용 시 그리드 선택 에러 발생** |
+| 004_alter_enums_to_text.sql | thought_key, emotion_key enum → text 변환 | 적용됨 |
+| 005_schema_cleanup.sql | category 추가, user_id 제거, updated_at, 복합 인덱스, thought UNIQUE | 적용됨 |
+| 006_rename_retrospectives_to_reflections.sql | retrospectives → reflections 테이블명 변경 | 미적용 |
 
 ---
 
