@@ -1,14 +1,15 @@
 import { create } from "zustand";
+import * as questApi from "@/lib/supabase/questApi";
 
 export interface Quest {
-  id: number;
+  id: string;
   title: string;
   date: string;
   points: number;
   done: boolean;
-  parentId?: number;
+  parentId?: string;
   originTab?: "단기" | "장기";
-  source?: "user" | "ai";
+  source?: "user" | "ai" | "survey";
 }
 
 export interface QuestState {
@@ -18,13 +19,12 @@ export interface QuestState {
 }
 
 interface QuestStore extends QuestState {
+  isLoading: boolean;
+  isLoaded: boolean;
+  loadQuests: () => Promise<void>;
+  reloadQuests: () => Promise<void>;
   setQuests: (updater: (prev: QuestState) => QuestState) => void;
-  addShortQuests: (quests: Quest[]) => void;
-}
-
-let nextId = 10;
-export function getNextId() {
-  return nextId++;
+  addShortQuests: (quests: Omit<Quest, "id">[]) => Promise<void>;
 }
 
 export function today() {
@@ -32,27 +32,54 @@ export function today() {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const INITIAL: QuestState = {
-  단기: [
-    { id: 1, title: "따뜻한 물로 손 씻기", date: "2026.04.03", points: 30, done: false, parentId: 3, source: "ai" },
-    { id: 2, title: "창문 열고 3번 심호흡", date: "2026.04.03", points: 20, done: false, parentId: 3, source: "ai" },
-    { id: 4, title: "5분 스트레칭", date: "2026.04.01", points: 20, done: true, parentId: 3, source: "user" },
-  ],
-  장기: [
-    { id: 3, title: "자격증 따기", date: "2025.06.01", points: 100, done: false, source: "user" },
-  ],
+export const useQuestStore = create<QuestStore>((set, get) => ({
+  단기: [],
+  장기: [],
   보류: [],
-};
+  isLoading: false,
+  isLoaded: false,
 
-export const useQuestStore = create<QuestStore>((set) => ({
-  ...INITIAL,
+  loadQuests: async () => {
+    if (get().isLoaded) return;
+    set({ isLoading: true });
+    try {
+      const state = await questApi.fetchQuests();
+      set({ ...state, isLoaded: true });
+    } catch (e) {
+      console.error("Failed to load quests:", e);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  reloadQuests: async () => {
+    set({ isLoading: true });
+    try {
+      const state = await questApi.fetchQuests();
+      set({ ...state, isLoaded: true });
+    } catch (e) {
+      console.error("Failed to reload quests:", e);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
   setQuests: (updater) =>
     set((state) => {
-      const { 단기, 장기, 보류 } = updater({ 단기: state.단기, 장기: state.장기, 보류: state.보류 });
+      const { 단기, 장기, 보류 } = updater({
+        단기: state.단기,
+        장기: state.장기,
+        보류: state.보류,
+      });
       return { 단기, 장기, 보류 };
     }),
-  addShortQuests: (quests) =>
-    set((state) => ({
-      단기: [...quests, ...state.단기],
-    })),
+
+  addShortQuests: async (quests) => {
+    try {
+      const inserted = await questApi.insertQuests(quests, "단기");
+      set((state) => ({ 단기: [...inserted, ...state.단기] }));
+    } catch (e) {
+      console.error("Failed to add quests:", e);
+    }
+  },
 }));

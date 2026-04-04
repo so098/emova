@@ -64,11 +64,11 @@ export default function CelebrationToast({ visible, message, sub, duration = 0 }
           </div>
 
           {/* 토스트 카드 */}
-          <div className="flex flex-col items-center gap-1 rounded-2xl bg-white px-6 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.14)]">
-            <span className="text-base font-bold text-[#1a1a1a]">{message}</span>
-            <span className="text-sm text-[#999999]">{sub}</span>
+          <div className="flex flex-col items-center gap-1 rounded-2xl bg-surface px-6 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.14)]">
+            <span className="text-base font-bold text-text-primary">{message}</span>
+            <span className="text-sm text-text-muted">{sub}</span>
             {duration > 0 && (
-              <div className="mt-2 h-[0.1875rem] w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+              <div className="mt-2 h-[0.1875rem] w-full overflow-hidden rounded-full bg-surface-elevated">
                 <motion.div
                   className="h-full rounded-full"
                   style={{ background: "var(--ui-button-primary)" }}

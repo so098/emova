@@ -41,7 +41,7 @@ export default function BottomBar() {
           <div
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-500"
-            style={{ background: i < filled ? "var(--brand-logo)" : "#e5e5e5" }}
+            style={{ background: i < filled ? "var(--brand-logo)" : "var(--border-default)" }}
           />
         ))}
       </div>
@@ -49,7 +49,7 @@ export default function BottomBar() {
       {/* 버튼 */}
       <button
         onClick={handleClick}
-        className="h-[2.875rem] w-full rounded-xl bg-brand-primary text-sm font-semibold text-white transition-opacity hover:opacity-85"
+        className="h-[2.875rem] w-full rounded-xl bg-brand-primary text-sm font-semibold text-on-accent transition-opacity hover:opacity-85"
       >
         {buttonLabel}
       </button>

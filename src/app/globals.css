@@ -22,6 +22,34 @@
   --ui-bottom-bar-height: 7rem;
   --ui-mobile-nav-height: 3.75rem;
 
+  /* Semantic surfaces */
+  --surface: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.55);
+  --surface-glass-heavy: rgba(255, 255, 255, 0.7);
+  --surface-elevated: #ffffff;
+  --surface-modal: #ffffff;
+  --text-primary: #3a3a3a;
+  --text-secondary: #555555;
+  --text-muted: #999999;
+  --text-faint: #cccccc;
+  --border-default: #e5e5e5;
+  --border-light: rgba(229, 229, 229, 0.6);
+  --shadow-card: rgba(0, 0, 0, 0.06);
+  --shadow-nav: rgba(0, 0, 0, 0.08);
+
+  /* 액센트 — 라이트에서 컬러, 다크에서 그레이 */
+  --accent-gold: #c8a96e;
+  --accent-gold-bg: #fff3dc;
+  --accent-gold-bg-hover: #ffe8c2;
+  --accent-gold-bg-light: #fff8ef;
+  --accent-red: #ff4d4d;
+  --accent-green: #00e676;
+  --accent-green-bg: #eaf7ee;
+  --accent-green-text: #5aba6e;
+  --on-accent: #ffffff;
+  --surface-card-glass: rgba(255, 255, 255, 0.65);
+  --border-card-glass: rgba(255, 255, 255, 0.5);
+
   /* Grid item colors */
   --item-unknown: #4894ff;
   --item-procrastinate: #ffa900;
@@ -43,6 +71,74 @@
   --emotion-calm: #a8d8b9;
 }
 
+/* ╔══════════════════════════════════════════╗
+   ║  다크 테마 — 여기만 수정하면 됩니다       ║
+   ║  :root 와 같은 순서, 모든 색상 순수 회색   ║
+   ╚══════════════════════════════════════════╝ */
+.dark {
+  /* ── 기본 ── */
+  --background:       #111111;  /* :root #ffffff */
+  --foreground:       #d4d4d4;  /* :root #171717 */
+
+  /* ── 브랜드 ── */
+  --brand-logo:       #a0a0a0;  /* :root #ffc38f */
+  --brand-deco-circle:#181818;  /* :root #fff3dc */
+  --ui-button-primary:#555555;  /* :root #ff9437 */
+  --ui-menu-bg:       #1a1a1a;  /* :root #f8f8f8 */
+
+  /* ── 표면 ── */
+  --surface:            #1a1a1a;                /* :root #ffffff */
+  --surface-glass:      rgba(26, 26, 26, 0.75); /* :root rgba(255,255,255,0.55) */
+  --surface-glass-heavy:rgba(30, 30, 30, 0.88); /* :root rgba(255,255,255,0.7)  */
+  --surface-elevated:   #1f1f1f;                /* :root #ffffff */
+  --surface-modal:      #1a1a1a;                /* :root #ffffff */
+  --surface-card-glass: rgba(35, 35, 35, 0.7);  /* :root rgba(255,255,255,0.65) */
+
+  /* ── 텍스트 ── */
+  --text-primary:   #d4d4d4;  /* :root #3a3a3a */
+  --text-secondary: #999999;  /* :root #555555 */
+  --text-muted:     #666666;  /* :root #999999 */
+  --text-faint:     #3a3a3a;  /* :root #cccccc */
+  --on-accent:      #e0e0e0;  /* :root #ffffff */
+
+  /* ── 보더 · 그림자 ── */
+  --border-default:   #2a2a2a;              /* :root #e5e5e5 */
+  --border-light:     rgba(50, 50, 50, 0.5);/* :root rgba(229,229,229,0.6) */
+  --border-card-glass:rgba(50, 50, 50, 0.5);/* :root rgba(255,255,255,0.5) */
+  --shadow-card:      rgba(0, 0, 0, 0.2);   /* :root rgba(0,0,0,0.06) */
+  --shadow-nav:       rgba(0, 0, 0, 0.3);   /* :root rgba(0,0,0,0.08) */
+
+  /* ── 액센트 (전부 그레이) ── */
+  --accent-gold:         #888888;  /* :root #c8a96e */
+  --accent-gold-bg:      #252525;  /* :root #fff3dc */
+  --accent-gold-bg-hover:#2e2e2e;  /* :root #ffe8c2 */
+  --accent-gold-bg-light:#222222;  /* :root #fff8ef */
+  --accent-red:          #888888;  /* :root #ff4d4d */
+  --accent-green:        #909090;  /* :root #00e676 */
+  --accent-green-bg:     #222222;  /* :root #eaf7ee */
+  --accent-green-text:   #999999;  /* :root #5aba6e */
+
+  /* ── 그리드 아이템 (명도 차이로 구분) ── */
+  --item-unknown:      #909090;  /* :root #4894ff */
+  --item-procrastinate:#7a7a7a;  /* :root #ffa900 */
+  --item-apathy:       #505050;  /* :root #656565 */
+  --item-remotive:     #b0b0b0;  /* :root #00ff77 */
+  --item-stimulate:    #686868;  /* :root #ff7400 */
+  --item-custom:       #5e5e5e;  /* :root #7e9cb9 */
+
+  /* ── 감정 (순수 회색) ── */
+  --emotion-anxiety:      #8c8c8c;  /* :root #f4845f */
+  --emotion-lethargy:     #787878;  /* :root #7ec8e3 */
+  --emotion-irritation:   #6e6e6e;  /* :root #ff6b6b */
+  --emotion-confusion:    #828282;  /* :root #c3aed6 */
+  --emotion-loneliness:   #646464;  /* :root #6c8ead */
+  --emotion-restlessness: #969696;  /* :root #ffb347 */
+  --emotion-motivation:   #a0a0a0;  /* :root #77dd77 */
+  --emotion-focus:        #8c8c8c;  /* :root #4fc3f7 */
+  --emotion-regret:       #5a5a5a;  /* :root #b0a4a4 */
+  --emotion-calm:         #787878;  /* :root #a8d8b9 */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -50,6 +146,30 @@
   --color-brand-logo: var(--brand-logo);
   --color-brand-primary: var(--ui-button-primary);
   --color-brand-deco: var(--brand-deco-circle);
+
+  --color-surface: var(--surface);
+  --color-surface-glass: var(--surface-glass);
+  --color-surface-glass-heavy: var(--surface-glass-heavy);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-modal: var(--surface-modal);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-border-default: var(--border-default);
+  --color-border-light: var(--border-light);
+
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-gold-bg: var(--accent-gold-bg);
+  --color-accent-gold-bg-hover: var(--accent-gold-bg-hover);
+  --color-accent-gold-bg-light: var(--accent-gold-bg-light);
+  --color-accent-red: var(--accent-red);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bg: var(--accent-green-bg);
+  --color-accent-green-text: var(--accent-green-text);
+  --color-on-accent: var(--on-accent);
+  --color-surface-card-glass: var(--surface-card-glass);
+  --color-border-card-glass: var(--border-card-glass);
 
   --color-emotion-anxiety: var(--emotion-anxiety);
   --color-emotion-lethargy: var(--emotion-lethargy);
@@ -114,6 +234,7 @@ body {
   z-index: 0;
   opacity: 0.35;
   pointer-events: none;
+  transition: opacity 0.3s;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 11rem;
@@ -139,4 +260,14 @@ body::before {
 body::after {
   bottom: -5rem;
   right: -5rem;
+}
+
+/* 다크 모드 — 노이즈·데코 억제 (위 .dark 블록과 함께 테마 관리) */
+.dark .noise-layer { opacity: 0.06; }
+.dark body::before,
+.dark body::after { opacity: 0.15; }
+
+/* 테마 전환 트랜지션 */
+body, body::before, body::after {
+  transition: background 0.3s, color 0.3s, opacity 0.3s;
 }

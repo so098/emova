@@ -172,12 +172,12 @@ export default function ReflectPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[26rem] -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[26rem] -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
             >
               {/* 상단 */}
               <div className="flex flex-col items-center gap-2 bg-[linear-gradient(135deg,var(--brand-logo)_0%,var(--ui-button-primary)_100%)] px-6 pt-8 pb-6">
-                <Sun size={32} strokeWidth={1.8} color="white" />
-                <span className="text-lg font-bold text-white">
+                <Sun size={32} strokeWidth={1.8} color="var(--on-accent)" />
+                <span className="text-lg font-bold text-on-accent">
                   오늘 하루, 고생했어요
                 </span>
               </div>
@@ -185,31 +185,31 @@ export default function ReflectPage() {
               <div className="flex flex-col gap-5 px-6 pt-5 pb-6">
                 {/* 흐름 */}
                 <div className="flex items-center justify-center gap-2.5 text-sm">
-                  <span className="rounded-full bg-[#f5f5f5] px-3 py-1.5 font-medium text-[#777777]">
+                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-[#777777]">
                     {summary.emotionBefore}
                   </span>
-                  <span className="text-xs text-[#cccccc]">→</span>
-                  <span className="rounded-full bg-[#f5f5f5] px-3 py-1.5 font-medium text-[#777777]">
+                  <span className="text-xs text-text-faint">→</span>
+                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-[#777777]">
                     {summary.questTitle}
                   </span>
-                  <span className="text-xs text-[#cccccc]">→</span>
-                  <span className="rounded-full bg-[#eaf7ee] px-3 py-1.5 font-medium text-[#5aba6e]">
+                  <span className="text-xs text-text-faint">→</span>
+                  <span className="rounded-full bg-accent-green-bg px-3 py-1.5 font-medium text-accent-green-text">
                     done
                   </span>
                 </div>
 
                 {/* 한 줄 회고 */}
-                <p className="text-center text-sm leading-relaxed text-[#555555]">
+                <p className="text-center text-sm leading-relaxed text-text-secondary">
                   &ldquo;{summary.oneLiner}&rdquo;
                 </p>
 
                 {/* 구분선 */}
-                <div className="h-px bg-[#f0f0f0]" />
+                <div className="h-px bg-surface-elevated" />
 
                 {/* XP */}
                 <div className="flex items-center justify-between rounded-[0.875rem] bg-[#fffaf3] px-4 py-3">
-                  <span className="text-sm text-[#999999]">경험치</span>
-                  <span className="text-sm font-bold text-[#c8a96e]">
+                  <span className="text-sm text-text-muted">경험치</span>
+                  <span className="text-sm font-bold text-accent-gold">
                     +{summary.xp} XP
                   </span>
                 </div>
@@ -220,7 +220,7 @@ export default function ReflectPage() {
                 </p>
                 <button
                   onClick={() => setSummary(null)}
-                  className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
+                  className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
                 >
                   닫기
                 </button>
@@ -232,11 +232,11 @@ export default function ReflectPage() {
 
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[#1a1a1a]">회고</h1>
+        <h1 className="text-xl font-bold text-text-primary">회고</h1>
         {!isWriting && (
           <button
             onClick={() => setWriteMode("guided")}
-            className="bg-brand-primary rounded-full px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
+            className="bg-brand-primary rounded-full px-4 py-2 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
           >
             회고 쓰기
           </button>
@@ -250,16 +250,16 @@ export default function ReflectPage() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="flex flex-1 flex-col gap-5 overflow-y-auto rounded-2xl border border-white/50 bg-white/65 px-5 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
+            className="flex flex-1 flex-col gap-5 overflow-y-auto rounded-2xl border border-border-card-glass bg-surface-card-glass px-5 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
           >
             {/* 모드 선택 탭 */}
-            <div className="flex gap-2 rounded-[0.75rem] bg-[#f5f5f5] p-1">
+            <div className="flex gap-2 rounded-[0.75rem] bg-surface-elevated p-1">
               <button
                 onClick={() => setWriteMode("guided")}
                 className={`flex-1 rounded-[0.625rem] py-2.5 text-sm font-semibold transition-all ${
                   writeMode === "guided"
-                    ? "bg-white text-[#1a1a1a] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                    : "text-[#999999]"
+                    ? "bg-surface text-text-primary shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+                    : "text-text-muted"
                 }`}
               >
                 질문으로 회고하기
@@ -268,8 +268,8 @@ export default function ReflectPage() {
                 onClick={() => setWriteMode("free")}
                 className={`flex-1 rounded-[0.625rem] py-2.5 text-sm font-semibold transition-all ${
                   writeMode === "free"
-                    ? "bg-white text-[#1a1a1a] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                    : "text-[#999999]"
+                    ? "bg-surface text-text-primary shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+                    : "text-text-muted"
                 }`}
               >
                 자유롭게 작성하기
@@ -278,7 +278,7 @@ export default function ReflectPage() {
 
             {/* 감정 변화 선택 */}
             <div className="flex flex-col gap-2.5">
-              <span className="text-sm font-semibold text-[#1a1a1a]">
+              <span className="text-sm font-semibold text-text-primary">
                 퀘스트 후 기분이 어때요?
               </span>
               <div className="flex gap-2">
@@ -288,8 +288,8 @@ export default function ReflectPage() {
                     onClick={() => setSelectedEmotion(opt.value)}
                     className={`flex flex-1 flex-col items-center gap-1.5 rounded-[0.875rem] py-3 text-sm font-medium transition-all ${
                       selectedEmotion === opt.value
-                        ? "bg-[#fff5e9] text-[#c8a96e] shadow-[0_0_0_1.5px_#e8c97a]"
-                        : "bg-[#f8f8f8] text-[#999999]"
+                        ? "bg-[#fff5e9] text-accent-gold shadow-[0_0_0_1.5px_#e8c97a]"
+                        : "bg-surface-elevated text-text-muted"
                     }`}
                   >
                     <opt.Icon size={20} strokeWidth={1.8} color={opt.color} />
@@ -316,7 +316,7 @@ export default function ReflectPage() {
                   {GUIDED_QUESTIONS.map((q, i) => (
                     <div key={i} className="flex flex-col gap-1.5">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold text-[#1a1a1a]">
+                        <span className="text-sm font-semibold text-text-primary">
                           {q.question}
                         </span>
                         <span className="text-xs text-[#b5b5b5]">{q.sub}</span>
@@ -326,7 +326,7 @@ export default function ReflectPage() {
                         onChange={(e) => updateGuidedAnswer(i, e.target.value)}
                         placeholder={q.placeholder}
                         rows={2}
-                        className="resize-none rounded-[0.875rem] bg-[#f8f8f8] px-4 py-3 text-sm leading-relaxed text-[#1a1a1a] outline-none placeholder:text-[#cccccc] focus:ring-1 focus:ring-[#e8c97a]"
+                        className="resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-[#e8c97a]"
                       />
                     </div>
                   ))}
@@ -343,7 +343,7 @@ export default function ReflectPage() {
                   transition={{ duration: 0.15 }}
                   className="flex flex-col gap-2"
                 >
-                  <span className="text-sm font-semibold text-[#1a1a1a]">
+                  <span className="text-sm font-semibold text-text-primary">
                     오늘을 돌아보며
                   </span>
                   <textarea
@@ -351,7 +351,7 @@ export default function ReflectPage() {
                     onChange={(e) => setFreeText(e.target.value)}
                     placeholder="느낀 점, 깨달은 것, 다음에 해보고 싶은 것..."
                     rows={5}
-                    className="resize-none rounded-[0.875rem] bg-[#f8f8f8] px-4 py-3 text-sm leading-relaxed text-[#1a1a1a] outline-none placeholder:text-[#cccccc] focus:ring-1 focus:ring-[#e8c97a]"
+                    className="resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-[#e8c97a]"
                   />
                 </motion.div>
               )}
@@ -366,13 +366,13 @@ export default function ReflectPage() {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit()}
-            className="bg-brand-primary flex-1 rounded-full py-3 text-sm font-bold text-white shadow-[0_4px_12px_rgba(255,148,55,0.3)] transition-opacity disabled:opacity-40"
+            className="bg-brand-primary flex-1 rounded-full py-3 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)] transition-opacity disabled:opacity-40"
           >
             저장하기
           </button>
           <button
             onClick={resetForm}
-            className="rounded-full bg-[#f0f0f0] px-5 py-3 text-sm font-medium text-[#bbbbbb] transition-colors hover:text-[#999999]"
+            className="rounded-full bg-surface-elevated px-5 py-3 text-sm font-medium text-[#bbbbbb] transition-colors hover:text-text-muted"
           >
             취소
           </button>
@@ -397,19 +397,19 @@ export default function ReflectPage() {
                 key={entry.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex min-h-[7.5rem] flex-col gap-3 rounded-2xl border border-white/50 bg-white/65 px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
+                className="flex min-h-[7.5rem] flex-col gap-3 rounded-2xl border border-border-card-glass bg-surface-card-glass px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
               >
                 {/* 상단: 날짜 + 감정 변화 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[#b5b5b5]">{entry.date}</span>
                     <span className="text-[#d9d9d9]">·</span>
-                    <span className="text-xs font-medium text-[#c8a96e]">
+                    <span className="text-xs font-medium text-accent-gold">
                       {entry.questTitle}
                     </span>
                   </div>
                   {after && (
-                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 text-xs font-medium text-[#c8a96e]">
+                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 text-xs font-medium text-accent-gold">
                       {after.label}
                     </span>
                   )}
@@ -417,19 +417,19 @@ export default function ReflectPage() {
 
                 {/* 감정 흐름 */}
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="rounded-full bg-[#f5f5f5] px-2.5 py-1 font-medium text-[#999999]">
+                  <span className="rounded-full bg-surface-elevated px-2.5 py-1 font-medium text-text-muted">
                     {entry.emotionBefore}
                   </span>
                   <ArrowRight size={16} strokeWidth={1.8} color="#d4d4d4" />
                   {after && (
-                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 font-medium text-[#c8a96e]">
+                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 font-medium text-accent-gold">
                       {after.label}
                     </span>
                   )}
                 </div>
 
                 {/* 회고 텍스트 */}
-                <p className="text-sm leading-relaxed whitespace-pre-line text-[#555555]">
+                <p className="text-sm leading-relaxed whitespace-pre-line text-text-secondary">
                   {entry.text}
                 </p>
               </motion.div>

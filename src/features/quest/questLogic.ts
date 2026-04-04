@@ -1,18 +1,6 @@
-export interface Quest {
-  id: number;
-  title: string;
-  date: string;
-  points: number;
-  done: boolean;
-  parentId?: number;
-  originTab?: "단기" | "장기";
-}
+import type { Quest, QuestState } from "@/store/questStore";
 
-export interface QuestState {
-  단기: Quest[];
-  장기: Quest[];
-  보류: Quest[];
-}
+export type { Quest, QuestState };
 
 export interface ToggleDoneResult {
   state: QuestState;
@@ -23,7 +11,7 @@ export interface ToggleDoneResult {
 }
 
 /** 단기 퀘스트 완료/취소 토글 + 장기 자동 완료 */
-export function toggleDone(prev: QuestState, id: number): ToggleDoneResult {
+export function toggleDone(prev: QuestState, id: string): ToggleDoneResult {
   const next: QuestState = {
     ...prev,
     단기: prev.단기.map((q) => (q.id === id ? { ...q, done: !q.done } : q)),
@@ -53,7 +41,7 @@ export function toggleDone(prev: QuestState, id: number): ToggleDoneResult {
 }
 
 /** 복원: done → !done + 연결된 장기도 복원 */
-export function restore(prev: QuestState, id: number): QuestState {
+export function restore(prev: QuestState, id: string): QuestState {
   const quest = [...prev.단기, ...prev.장기].find((q) => q.id === id);
   if (!quest) return prev;
 
@@ -73,7 +61,7 @@ export function restore(prev: QuestState, id: number): QuestState {
 }
 
 /** 보류로 이동 */
-export function hold(prev: QuestState, id: number): QuestState {
+export function hold(prev: QuestState, id: string): QuestState {
   const fromShort = prev.단기.find((q) => q.id === id);
   const fromLong = prev.장기.find((q) => q.id === id);
   const quest = fromShort || fromLong;
@@ -88,7 +76,7 @@ export function hold(prev: QuestState, id: number): QuestState {
 }
 
 /** 보류에서 원래 탭으로 복원 */
-export function resume(prev: QuestState, id: number): QuestState {
+export function resume(prev: QuestState, id: string): QuestState {
   const quest = prev.보류.find((q) => q.id === id);
   if (!quest) return prev;
   const target = quest.originTab ?? "단기";
@@ -100,7 +88,7 @@ export function resume(prev: QuestState, id: number): QuestState {
 }
 
 /** 삭제 */
-export function remove(prev: QuestState, id: number): QuestState {
+export function remove(prev: QuestState, id: string): QuestState {
   return {
     단기: prev.단기.filter((q) => q.id !== id),
     장기: prev.장기.filter((q) => q.id !== id),

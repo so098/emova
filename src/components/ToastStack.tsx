@@ -68,13 +68,13 @@ function ToastOverlay({
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 onClick={() => onRemove(toast.id)}
-                className="pointer-events-auto flex cursor-pointer flex-col gap-0.5 rounded-[0.875rem] bg-white px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+                className="pointer-events-auto flex cursor-pointer flex-col gap-0.5 rounded-[0.875rem] bg-surface px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
               >
-                <span className="text-sm font-bold text-[#1a1a1a]">
+                <span className="text-sm font-bold text-text-primary">
                   {toast.message}
                 </span>
                 {toast.sub && (
-                  <span className="text-xs text-[#999999]">{toast.sub}</span>
+                  <span className="text-xs text-text-muted">{toast.sub}</span>
                 )}
               </motion.div>
             ))}

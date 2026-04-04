@@ -12,6 +12,7 @@ import {
   ROUTES,
 } from "@/constants/routes";
 import SkipLink from "@/components/SkipLink";
+import ThemeToggle from "@/components/ThemeToggle";
 import SessionSidePanel from "@/features/home/SessionSidePanel";
 
 const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.LOADING, ROUTES.QUESTION, ROUTES.RECOMMEND];
@@ -27,7 +28,7 @@ export default function AppChrome() {
   return (
     <>
       {/* 헤더 — 고정 높이, 콘텐츠 밀어내기 */}
-      <header className="border-[#e5e5e5]/60px-6 sticky top-0 z-30 mx-auto flex h-(--ui-header-height) w-full max-w-[60rem] shrink-0 items-center justify-between">
+      <header className="sticky top-0 z-30 mx-auto flex h-(--ui-header-height) w-full max-w-[60rem] shrink-0 items-center justify-between px-6">
         <div className="shrink-0">
           <UserHUD />
         </div>
@@ -55,6 +56,10 @@ export default function AppChrome() {
           <SessionSidePanel />
         </div>
       )}
+      {/* 데스크톱 — 네비 메뉴 아래 정렬 */}
+      <div className="fixed bottom-6 left-[max(1rem,calc((100vw-60rem)/2+1rem))] z-30 hidden md:block">
+        <ThemeToggle />
+      </div>
     </>
   );
 }

@@ -100,7 +100,7 @@ export default function EmotionCardList() {
                   onClick={() => handleCardClick(globalIndex)}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                  className="flex items-center gap-4 rounded-2xl bg-white/65 px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
+                  className="flex items-center gap-4 rounded-2xl bg-surface-card-glass px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
                   style={{
                     border:
                       selected === globalIndex
@@ -115,13 +115,13 @@ export default function EmotionCardList() {
                       boxShadow: `0 0.25rem 0.75rem ${color}40`,
                     }}
                   >
-                    <Icon size={20} strokeWidth={2} color="white" />
+                    <Icon size={20} strokeWidth={2} color="var(--on-accent)" />
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-base font-bold text-[#1a1a1a]">
+                    <span className="text-base font-bold text-text-primary">
                       {label}
                     </span>
-                    <span className="text-xs text-[#666666]">{sub}</span>
+                    <span className="text-xs text-text-secondary">{sub}</span>
                   </div>
                 </motion.div>
               );
@@ -139,7 +139,7 @@ export default function EmotionCardList() {
             className="h-1.5 rounded-full transition-all duration-300"
             style={{
               width: i === page ? "1.5rem" : "0.375rem",
-              background: i === page ? "#FFA940" : "#e5e5e5",
+              background: i === page ? "var(--ui-button-primary)" : "var(--border-default)",
             }}
           />
         ))}

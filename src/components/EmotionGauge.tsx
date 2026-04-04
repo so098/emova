@@ -7,16 +7,16 @@ export default function EmotionGauge() {
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-2 text-[0.6875rem] font-semibold text-[#666666]">
+      <div className="flex items-center justify-between gap-2 text-[0.6875rem] font-semibold text-text-secondary">
         <span>포인트</span>
         <span className="text-brand-primary">{points}P</span>
       </div>
 
-      <div className="relative h-3 w-[13.8125rem] overflow-hidden rounded-full border border-[#e0e0e0]/60 bg-[#FFF3DC]">
+      <div className="relative h-3 w-[13.8125rem] overflow-hidden rounded-full border border-border-default/60 bg-accent-gold-bg">
         {[25, 50, 75].map((pos) => (
           <div
             key={pos}
-            className="absolute top-0 z-10 h-full w-px bg-white/60"
+            className="absolute top-0 z-10 h-full w-px bg-surface-card-glass"
             style={{ left: `${pos}%` }}
           />
         ))}
@@ -24,10 +24,10 @@ export default function EmotionGauge() {
           className="h-full rounded-full bg-[linear-gradient(90deg,var(--brand-logo)_0%,var(--ui-button-primary)_100%)] shadow-[0_0_6px_rgba(244,132,95,0.5)] transition-all duration-500 ease-out"
           style={{ width: `${Math.min(100, (points / 500) * 100)}%` }}
         />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[0.3125rem] rounded-full bg-white/30" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[0.3125rem] rounded-full bg-surface-card-glass" />
       </div>
 
-      <div className="flex justify-between text-[0.5625rem] text-[#999999]">
+      <div className="flex justify-between text-[0.5625rem] text-text-muted">
         <span>0</span>
         <span>125</span>
         <span>250</span>

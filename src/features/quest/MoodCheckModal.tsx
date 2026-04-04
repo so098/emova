@@ -47,7 +47,7 @@ export default function MoodCheckModal({ open, onClose }: MoodCheckModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[28rem] -translate-y-1/2 flex-col items-center gap-6 rounded-2xl bg-white px-6 pt-8 pb-6 shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
+            className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[28rem] -translate-y-1/2 flex-col items-center gap-6 rounded-2xl bg-surface px-6 pt-8 pb-6 shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
           >
             <AnimatePresence mode="wait">
               {step === 1 && (
@@ -58,7 +58,7 @@ export default function MoodCheckModal({ open, onClose }: MoodCheckModalProps) {
                   exit={{ opacity: 0, x: -20 }}
                   className="flex flex-col items-center gap-6"
                 >
-                  <p className="text-center text-base leading-relaxed font-bold text-[#1a1a1a]">
+                  <p className="text-center text-base leading-relaxed font-bold text-text-primary">
                     퀘스트를 해냈네요!
                     <br />
                     오늘 기분은 조금 달라졌나요?
@@ -73,7 +73,7 @@ export default function MoodCheckModal({ open, onClose }: MoodCheckModalProps) {
                         style={{ background: mood.bg }}
                       >
                         <mood.Icon size={28} strokeWidth={1.8} color={mood.color} />
-                        <span className="text-xs font-semibold text-[#555555]">
+                        <span className="text-xs font-semibold text-text-secondary">
                           {mood.label}
                         </span>
                       </button>
@@ -90,23 +90,23 @@ export default function MoodCheckModal({ open, onClose }: MoodCheckModalProps) {
                   exit={{ opacity: 0 }}
                   className="flex flex-col items-center gap-5"
                 >
-                  <p className="text-center text-base leading-relaxed font-bold text-[#1a1a1a]">
+                  <p className="text-center text-base leading-relaxed font-bold text-text-primary">
                     그 감정을 회고에 남겨볼까요?
                   </p>
 
-                  <p className="text-sm text-[#999999]">
+                  <p className="text-sm text-text-muted">
                     &apos;{selected}&apos;를 선택하셨어요
                   </p>
 
                   <button
                     onClick={handleClose}
-                    className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-white"
+                    className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-on-accent"
                   >
                     회고 남기기
                   </button>
                   <button
                     onClick={handleClose}
-                    className="text-sm font-medium text-[#aaaaaa]"
+                    className="text-sm font-medium text-text-muted"
                   >
                     다음에 할게요
                   </button>

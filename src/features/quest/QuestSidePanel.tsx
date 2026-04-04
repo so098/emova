@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getMovaMessage, type MovaContext } from "./movaMessages";
 
 interface Quest {
-  id: number;
+  id: string;
   title: string;
   points: number;
   done: boolean;
-  parentId?: number;
+  parentId?: string;
 }
 
 interface QuestSidePanelProps {
@@ -77,14 +77,14 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
   return (
     <div className="flex w-[14rem] shrink-0 flex-col gap-3">
       {/* 모바 말풍선 */}
-      <div className="relative rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+      <div className="relative rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         {/* 꼬리 — 왼쪽 */}
-        <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 bg-white shadow-[-1px_1px_2px_rgba(0,0,0,0.04)]" />
+        <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 bg-surface shadow-[-1px_1px_2px_rgba(0,0,0,0.04)]" />
         <div className="mb-2 flex items-center gap-2">
-          <div className="flex h-[1.75rem] w-[1.75rem] items-center justify-center rounded-full bg-[#FFF3DC]">
+          <div className="flex h-[1.75rem] w-[1.75rem] items-center justify-center rounded-full bg-accent-gold-bg">
             <span className="text-sm">🧡</span>
           </div>
-          <span className="text-xs font-bold text-[#1a1a1a]">모바</span>
+          <span className="text-xs font-bold text-text-primary">모바</span>
         </div>
         <AnimatePresence mode="wait">
           <motion.p
@@ -92,7 +92,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="text-[0.8125rem] leading-relaxed font-medium text-[#555555]"
+            className="text-[0.8125rem] leading-relaxed font-medium text-text-secondary"
           >
             {movaMessage}
           </motion.p>
@@ -100,17 +100,17 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
       </div>
 
       {/* 오늘의 요약 */}
-      <div className="rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-        <h3 className="mb-3 text-xs font-bold text-[#aaaaaa]">오늘의 현황</h3>
+      <div className="rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <h3 className="mb-3 text-xs font-bold text-text-muted">오늘의 현황</h3>
 
         {/* 단기 진행률 */}
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-[#666666]">단기</span>
+          <span className="text-xs font-medium text-text-secondary">단기</span>
           <span className="text-xs font-bold text-brand-primary">
             {doneShort}/{totalShort}
           </span>
         </div>
-        <div className="mb-3 h-[0.3125rem] overflow-hidden rounded-full bg-[#f0f0f0]">
+        <div className="mb-3 h-[0.3125rem] overflow-hidden rounded-full bg-surface-elevated">
           <motion.div
             className="h-full rounded-full bg-brand-primary"
             initial={{ width: 0 }}
@@ -121,15 +121,15 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
 
         {/* 장기 */}
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-medium text-[#666666]">장기</span>
-          <span className="text-xs font-bold text-[#c8a96e]">
+          <span className="text-xs font-medium text-text-secondary">장기</span>
+          <span className="text-xs font-bold text-accent-gold">
             {doneLong}/{totalLong}
           </span>
         </div>
 
         {/* 총 포인트 */}
         <div className="flex items-center justify-between rounded-[0.625rem] bg-[#fff8ef] px-3 py-2">
-          <span className="text-xs font-medium text-[#999999]">획득 포인트</span>
+          <span className="text-xs font-medium text-text-muted">획득 포인트</span>
           <span className="text-sm font-bold text-brand-primary">+{totalPoints}</span>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-2xl bg-[#FFF3DC] px-4 py-3 text-center text-sm font-semibold text-[#c8a96e]"
+            className="rounded-2xl bg-accent-gold-bg px-4 py-3 text-center text-sm font-semibold text-accent-gold"
           >
             {motivation}
           </motion.div>
@@ -150,8 +150,8 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
 
       {/* 활동 피드 */}
       {activities.length > 0 && (
-        <div className="rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-          <h3 className="mb-3 text-xs font-bold text-[#aaaaaa]">최근 활동</h3>
+        <div className="rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+          <h3 className="mb-3 text-xs font-bold text-text-muted">최근 활동</h3>
           <div className="flex flex-col gap-2">
             <AnimatePresence>
               {activities.map((item) => (
@@ -166,14 +166,14 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
                     className={`mt-0.5 h-[0.375rem] w-[0.375rem] shrink-0 rounded-full ${
                       item.type === "streak"
                         ? "bg-brand-primary"
-                        : "bg-[#c8a96e]"
+                        : "bg-accent-gold"
                     }`}
                   />
                   <div className="flex flex-col">
-                    <span className="text-xs font-medium text-[#555555]">
+                    <span className="text-xs font-medium text-text-secondary">
                       {item.text}
                     </span>
-                    <span className="text-[0.625rem] text-[#cccccc]">
+                    <span className="text-[0.625rem] text-text-faint">
                       {item.time}
                     </span>
                   </div>

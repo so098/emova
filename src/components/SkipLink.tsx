@@ -21,7 +21,7 @@ export default function SkipLink({
         onBeforeNavigate?.();
         router.push(href);
       }}
-      className="whitespace-nowrap text-sm text-[#aaaaaa] transition-colors hover:text-brand-primary"
+      className="whitespace-nowrap text-sm text-text-muted transition-colors hover:text-brand-primary"
     >
       {label}
     </button>

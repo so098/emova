@@ -24,7 +24,12 @@ export default function GridSection() {
   const [selected, setSelected] = useState<number | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState("");
+  const [customConfirmed, setCustomConfirmed] = useState(false);
   const setGrid = useSessionStore((s) => s.setGrid);
+
+  /** 공백 포함 6자 초과 시 말줄임 */
+  const truncateLabel = (text: string) =>
+    text.length > 6 ? text.slice(0, 6) + "…" : text;
 
   const updateThought = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -43,16 +48,24 @@ export default function GridSection() {
             onClick={() => {
               setSelected(i);
               if (i === 5) {
-                setCustomOpen(true);
+                if (customConfirmed) {
+                  // 확정된 상태에서 다시 클릭하면 수정 모드
+                  setCustomConfirmed(false);
+                  setCustomOpen(true);
+                } else {
+                  setCustomOpen(true);
+                }
               } else {
                 setCustomOpen(false);
+                setCustomConfirmed(false);
+                setCustomValue("");
                 setGrid(ITEMS[i].label.replace("\n", " "));
                 updateThought(ITEMS[i].key);
               }
             }}
             whileTap={{ scale: 0.91 }}
             transition={{ type: "spring", stiffness: 500, damping: 18 }}
-            className="flex h-[10rem] w-[10rem] cursor-pointer flex-col items-center justify-center gap-2 whitespace-pre-line rounded-xl bg-white/55 text-center text-sm font-medium leading-snug text-[#3a3a3a] shadow-[0_4px_12px_rgba(0,0,0,0.06)] backdrop-blur-lg"
+            className="flex h-[10rem] w-[10rem] cursor-pointer flex-col items-center justify-center gap-2 whitespace-pre-line rounded-xl bg-surface-glass text-center text-sm font-medium leading-snug text-text-primary shadow-[0_0.25rem_0.75rem_var(--shadow-card)] backdrop-blur-lg"
             style={{ border: selected === i ? `1px solid ${color}` : "1px solid rgba(255,255,255,0.5)" }}
           >
             <div
@@ -62,25 +75,46 @@ export default function GridSection() {
                 boxShadow: `0 0.25rem 0.75rem ${color}40`,
               }}
             >
-              <Icon size={22} strokeWidth={2} color="white" />
+              <Icon size={22} strokeWidth={2} color="var(--on-accent)" />
             </div>
-            <span>{label}</span>
+            <span>
+              {i === 5 && customConfirmed && customValue.trim()
+                ? truncateLabel(customValue.trim())
+                : label}
+            </span>
           </motion.div>
         ))}
       </div>
 
-      {customOpen && (
-        <input
-          type="text"
-          value={customValue}
-          onChange={(e) => {
-            setCustomValue(e.target.value);
-            updateThought(e.target.value || "custom");
-          }}
-          placeholder="직접 입력해주세요"
-          autoFocus
-          className="w-full rounded-xl border border-[#e5e5e5] bg-transparent px-4 py-3 text-sm outline-none transition-colors placeholder:text-[#cccccc] focus:border-brand-logo"
-        />
+      {customOpen && !customConfirmed && (
+        <div className="flex w-full gap-2">
+          <input
+            type="text"
+            value={customValue}
+            onChange={(e) => {
+              setCustomValue(e.target.value);
+              updateThought(e.target.value || "custom");
+            }}
+            placeholder="직접 입력해주세요"
+            autoFocus
+            className="flex-1 rounded-xl border border-border-default bg-transparent px-4 py-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-faint focus:border-brand-logo"
+          />
+          <button
+            type="button"
+            disabled={!customValue.trim()}
+            onClick={() => {
+              const val = customValue.trim();
+              if (!val) return;
+              setCustomConfirmed(true);
+              setCustomOpen(false);
+              setGrid(val);
+              updateThought(val);
+            }}
+            className="shrink-0 rounded-xl bg-[var(--ui-button-primary)] px-4 py-3 text-sm font-medium text-on-accent transition-opacity disabled:opacity-40"
+          >
+            확인
+          </button>
+        </div>
       )}
     </div>
   );

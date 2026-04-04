@@ -23,7 +23,7 @@ export default function QuestionDetail({ question }: { question: Omit<Question, 
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="max-w-[28rem] text-center text-xl font-bold text-[#1a1a1a]"
+          className="max-w-[28rem] text-center text-xl font-bold text-text-primary"
         >
           {question.label}
         </motion.h2>
@@ -39,7 +39,7 @@ export default function QuestionDetail({ question }: { question: Omit<Question, 
             setSession(question.label, e.target.value);
           }}
           placeholder="자유롭게 적어보세요..."
-          className="w-full max-w-(--ui-content-width) resize-none rounded-2xl bg-white/80 px-5 py-4 text-sm leading-relaxed text-[#1a1a1a] shadow-[0_2px_12px_rgba(0,0,0,0.06)] outline-none placeholder:text-[#cccccc] focus:shadow-[0_2px_16px_rgba(0,0,0,0.1)]"
+          className="w-full max-w-(--ui-content-width) resize-none rounded-2xl bg-surface-card-glass px-5 py-4 text-sm leading-relaxed text-text-primary shadow-[0_2px_12px_rgba(0,0,0,0.06)] outline-none placeholder:text-text-faint focus:shadow-[0_2px_16px_rgba(0,0,0,0.1)]"
           style={{ minHeight: "20rem", maxHeight: "calc(100dvh - 22rem)" }}
         />
       </main>

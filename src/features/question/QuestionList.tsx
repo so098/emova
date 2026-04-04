@@ -35,7 +35,7 @@ export default function QuestionList() {
                 router.push(qs ? `/question/${slug}?${qs}` : `/question/${slug}`);
               }}
               whileTap={{ scale: 0.97 }}
-              className="flex cursor-pointer items-center gap-4 rounded-2xl border border-white/50 bg-white/65 px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
+              className="flex cursor-pointer items-center gap-4 rounded-2xl border border-border-card-glass bg-surface-card-glass px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg"
             >
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
@@ -44,11 +44,11 @@ export default function QuestionList() {
                   boxShadow: `0 0.25rem 0.75rem ${color}40`,
                 }}
               >
-                <Icon size={20} strokeWidth={2} color="white" />
+                <Icon size={20} strokeWidth={2} color="var(--on-accent)" />
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-base font-bold text-[#1a1a1a]">{label}</span>
-                <span className="text-xs text-[#666666]">{sub}</span>
+                <span className="text-base font-bold text-text-primary">{label}</span>
+                <span className="text-xs text-text-secondary">{sub}</span>
               </div>
             </motion.div>
           ))}
@@ -58,7 +58,7 @@ export default function QuestionList() {
       {visible < QUESTIONS.length && (
         <button
           onClick={showMore}
-          className="mt-1 self-center text-sm font-semibold text-[#999999] transition-colors hover:text-brand-primary"
+          className="mt-1 self-center text-sm font-semibold text-text-muted transition-colors hover:text-brand-primary"
         >
           질문 더 보기
         </button>

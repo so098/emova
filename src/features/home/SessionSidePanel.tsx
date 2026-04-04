@@ -21,8 +21,8 @@ export default function SessionSidePanel() {
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
       className="hidden w-[14rem] shrink-0 flex-col gap-3 lg:flex"
     >
-      <div className="rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-        <h3 className="mb-3 text-xs font-bold text-[#aaaaaa]">선택 현황</h3>
+      <div className="rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <h3 className="mb-3 text-xs font-bold text-text-muted">선택 현황</h3>
         <AnimatePresence mode="popLayout">
           <div className="flex flex-col gap-2.5">
             {items.map((item) => (
@@ -36,7 +36,7 @@ export default function SessionSidePanel() {
                 <span className="text-[0.625rem] font-semibold text-[#bbbbbb]">
                   {item.label}
                 </span>
-                <span className="rounded-[0.625rem] bg-[#f8f8f8] px-3 py-2 text-xs font-medium text-[#555555]">
+                <span className="rounded-[0.625rem] bg-surface-elevated px-3 py-2 text-xs font-medium text-text-secondary">
                   {item.value}
                 </span>
               </motion.div>

@@ -40,7 +40,7 @@ export default function LoadingMessage({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="max-w-[22rem] text-center text-base font-semibold leading-relaxed text-[#3a3a3a]"
+        className="max-w-[22rem] text-center text-base font-semibold leading-relaxed text-text-primary"
       >
         {message}
       </motion.p>
