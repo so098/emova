@@ -1,0 +1,190 @@
+import { createClient } from "./client";
+import type { Quest, QuestState } from "@/store/questStore";
+
+/* ── DB row 타입 ── */
+interface DbQuestRow {
+  id: string;
+  client_id: string;
+  title: string;
+  description: string | null;
+  source: string;
+  status: string;
+  due_at: string | null;
+  xp_reward: number;
+  created_at: string;
+  completed_at: string | null;
+  parent_id: string | null;
+  category: string;
+}
+
+/* ── 매핑 헬퍼 ── */
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function fromDbRow(row: DbQuestRow): Quest {
+  return {
+    id: row.id,
+    title: row.title,
+    date: formatDate(row.created_at),
+    points: row.xp_reward,
+    done: row.status === "done",
+    parentId: row.parent_id ?? undefined,
+    originTab: row.category === "보류" ? undefined : undefined,
+    source: row.source as Quest["source"],
+  };
+}
+
+/* ── 인증 헬퍼 ── */
+
+async function getClientId(): Promise<string> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  return user.id;
+}
+
+/* ── CRUD ── */
+
+export async function fetchQuests(): Promise<QuestState> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("quests")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as DbQuestRow[];
+  const state: QuestState = { 단기: [], 장기: [], 보류: [] };
+
+  for (const row of rows) {
+    const quest = fromDbRow(row);
+    const cat = row.category as keyof QuestState;
+    if (cat === "보류") {
+      // 보류 탭: originTab 복원 (보류 전 원래 카테고리는 알 수 없으므로 단기 기본)
+      quest.originTab = "단기";
+    }
+    if (state[cat]) {
+      state[cat].push(quest);
+    }
+  }
+
+  return state;
+}
+
+export async function insertQuest(
+  quest: Omit<Quest, "id">,
+  category: "단기" | "장기",
+): Promise<Quest> {
+  const clientId = await getClientId();
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("quests")
+    .insert({
+      client_id: clientId,
+      title: quest.title,
+      source: quest.source ?? "user",
+      status: quest.done ? "done" : "pending",
+      xp_reward: quest.points,
+      parent_id: quest.parentId ?? null,
+      category,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return fromDbRow(data as DbQuestRow);
+}
+
+export async function insertQuests(
+  quests: Omit<Quest, "id">[],
+  category: "단기" | "장기",
+): Promise<Quest[]> {
+  if (quests.length === 0) return [];
+  const clientId = await getClientId();
+  const supabase = createClient();
+
+  const rows = quests.map((q) => ({
+    client_id: clientId,
+    title: q.title,
+    source: q.source ?? "user",
+    status: q.done ? "done" : "pending",
+    xp_reward: q.points,
+    parent_id: q.parentId ?? null,
+    category,
+  }));
+
+  const { data, error } = await supabase
+    .from("quests")
+    .insert(rows)
+    .select();
+
+  if (error) throw error;
+  return (data as DbQuestRow[]).map(fromDbRow);
+}
+
+export async function updateQuestStatus(
+  id: string,
+  done: boolean,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("quests")
+    .update({
+      status: done ? "done" : "pending",
+      completed_at: done ? new Date().toISOString() : null,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateQuestCategory(
+  id: string,
+  category: "단기" | "장기" | "보류",
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("quests")
+    .update({ category })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateQuestTitle(
+  id: string,
+  title: string,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("quests")
+    .update({ title })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateQuestFields(
+  id: string,
+  fields: Partial<{
+    title: string;
+    xp_reward: number;
+    parent_id: string | null;
+    category: string;
+    status: string;
+  }>,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("quests").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteQuest(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("quests").delete().eq("id", id);
+  if (error) throw error;
+}
