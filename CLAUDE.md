@@ -106,6 +106,7 @@
 - **라우트 상수 파일 동기화** — 모든 경로 문자열은 `src/constants/routes.ts`에서 관리. `app/` 하위 페이지가 추가/삭제될 때 `ROUTES`, `PROGRESS_FLOW`, `HIDE_NAV_ROUTES`도 함께 업데이트할 것
 - **라우트는 실제 폴더 기준** — `app/` 하위에 해당 폴더/페이지가 존재하지 않으면 `routes.ts`에 추가하지 말 것
 - **동적 라우트 세그먼트명 변경 시 `.next` 캐시 삭제 필수** — `[index]` → `[slug]` 같이 폴더명을 바꾸면 반드시 `.next` 폴더 삭제 후 서버 재시작. 캐시가 남으면 Next.js가 충돌 에러를 발생시킴
+- **OAuth 구현 시 인증 레이스 컨디션 수정 필수** — 현재 `AuthProvider`의 `signInAnonymously()`가 비동기라 인증 완료 전에 퀘스트 쓰기가 가능함. OAuth 전환 시 인증 완료 전까지 쓰기 UI를 비활성화하거나 `getClientId()`에서 세션을 await하도록 수정할 것 (Codex 리뷰 #3)
 
 ---
 
