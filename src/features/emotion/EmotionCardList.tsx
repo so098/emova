@@ -8,6 +8,7 @@ import { ROUTES } from "@/constants/routes";
 import { Waves, CloudDrizzle, Flame, Shuffle, Moon, Zap, Sprout, Circle, Sparkles, BatteryLow } from "lucide-react";
 import type { ElementType } from "react";
 import { useSessionStore } from "@/store/sessionStore";
+import { useSaveEmotion } from "@/features/flow/useFlowMutations";
 
 const ITEMS: { label: string; sub: string; color: string; Icon: ElementType }[] = [
   { label: "불안", sub: "막연한 긴장감, 걱정", color: "#f4845f", Icon: Waves },
@@ -39,6 +40,8 @@ export default function EmotionCardList() {
   const [dir, setDir] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   const setEmotionStore = useSessionStore((s) => s.setEmotion);
+  const supabaseSessionId = useSessionStore((s) => s.supabaseSessionId);
+  const saveEmotion = useSaveEmotion();
 
   const updateEmotion = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -48,6 +51,10 @@ export default function EmotionCardList() {
 
   const handleCardClick = (globalIndex: number) => {
     if (selected === globalIndex) {
+      // 더블클릭 → 다음 페이지로 이동 + DB 저장
+      if (supabaseSessionId) {
+        saveEmotion.mutate({ sessionId: supabaseSessionId, key: ITEMS[globalIndex].label });
+      }
       const params = new URLSearchParams(searchParams.toString());
       params.set("emotion", ITEMS[globalIndex].label);
       router.push(`${ROUTES.LOADING}?${params.toString()}`);

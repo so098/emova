@@ -6,6 +6,8 @@ import {
   resume,
   remove,
   sortByDone,
+  convertToLong,
+  convertToShort,
   type QuestState,
 } from "./questLogic";
 
@@ -311,6 +313,74 @@ describe("엣지 케이스", () => {
     ];
     const sorted = sortByDone(list);
     expect(sorted.map((q) => q.id)).toEqual(["1", "2"]);
+  });
+});
+
+// ─── convertToLong / convertToShort ────────────────
+
+describe("convertToLong", () => {
+  it("단기를 장기로 변환한다 (points → 100)", () => {
+    const state = makeState();
+    const next = convertToLong(state, "1");
+
+    expect(next.단기.find((q) => q.id === "1")).toBeUndefined();
+    const converted = next.장기.find((q) => q.id === "1");
+    expect(converted).toBeDefined();
+    expect(converted?.points).toBe(100);
+    expect(converted?.parentId).toBeUndefined();
+  });
+
+  it("장기 목록 앞에 추가된다", () => {
+    const state = makeState();
+    const next = convertToLong(state, "1");
+    expect(next.장기[0].id).toBe("1");
+  });
+
+  it("존재하지 않는 ID면 상태 변경 없음", () => {
+    const state = makeState();
+    expect(convertToLong(state, "999")).toEqual(state);
+  });
+
+  it("장기 ID로 호출하면 상태 변경 없음", () => {
+    const state = makeState();
+    expect(convertToLong(state, "10")).toEqual(state);
+  });
+});
+
+describe("convertToShort", () => {
+  it("장기를 단기로 변환한다 (points → 10)", () => {
+    const state = makeState();
+    const next = convertToShort(state, "10");
+
+    expect(next.장기.find((q) => q.id === "10")).toBeUndefined();
+    const converted = next.단기.find((q) => q.id === "10");
+    expect(converted).toBeDefined();
+    expect(converted?.points).toBe(10);
+  });
+
+  it("연결된 단기의 parentId가 해제된다", () => {
+    const state = makeState();
+    const next = convertToShort(state, "10");
+
+    // id:1, id:2 는 원래 parentId: "10" 이었음
+    expect(next.단기.find((q) => q.id === "1")?.parentId).toBeUndefined();
+    expect(next.단기.find((q) => q.id === "2")?.parentId).toBeUndefined();
+  });
+
+  it("단기 목록 앞에 추가된다", () => {
+    const state = makeState();
+    const next = convertToShort(state, "10");
+    expect(next.단기[0].id).toBe("10");
+  });
+
+  it("존재하지 않는 ID면 상태 변경 없음", () => {
+    const state = makeState();
+    expect(convertToShort(state, "999")).toEqual(state);
+  });
+
+  it("단기 ID로 호출하면 상태 변경 없음", () => {
+    const state = makeState();
+    expect(convertToShort(state, "1")).toEqual(state);
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,62 +20,53 @@ import {
   Plus,
   ArrowRightLeft,
 } from "lucide-react";
-import type { MovaContext } from "@/features/quest/movaMessages";
-import {
-  useQuestStore,
-  today,
-  type Quest,
-  type QuestState,
-} from "@/store/questStore";
-import { useRewardStore } from "@/store/rewardStore";
-import * as questApi from "@/lib/supabase/questApi";
+import { sortByDone } from "./questLogic";
+import { useQuestActions } from "./useQuestActions";
+import { useQuests } from "./useQuests";
 
 type Tab = "단기" | "장기" | "보류";
-
 const TABS: Tab[] = ["단기", "장기", "보류"];
-
-/** 미완료를 위로, 완료를 아래로 정렬 */
-function sortByDone(list: Quest[]) {
-  return [...list.filter((q) => !q.done), ...list.filter((q) => q.done)];
-}
 
 export default function QuestPage() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab) || "장기";
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
-  const 단기 = useQuestStore((s) => s.단기);
-  const 장기 = useQuestStore((s) => s.장기);
-  const 보류 = useQuestStore((s) => s.보류);
-  const quests = { 단기, 장기, 보류 };
-  const setQuests = useQuestStore((s) => s.setQuests);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalQuestId, setModalQuestId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [mounted, setMounted] = useState(false);
+
+  const { data: serverQuests, isLoading, error } = useQuests();
+  const { showToast } = useToast();
+
+  const {
+    quests,
+    restoreTargetId, setRestoreTargetId,
+    convertTargetId, setConvertTargetId,
+    moodCheckOpen, setMoodCheckOpen,
+    movaContext,
+    editingId,
+    menuOpenId, menuPos,
+    restoreTarget,
+    toggleDone,
+    handleRestore, handleAddAsNew,
+    holdQuest, resumeQuest,
+    convertToLong, convertToShort, tryConvertToShort,
+    deleteQuest,
+    startEdit, addInlineQuest, commitInlineTitle,
+    handleRoutineSubmit,
+    openMenu, closeMenu,
+  } = useQuestActions(serverQuests ?? undefined);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const openMenu = useCallback((id: string, btn: HTMLButtonElement) => {
-    const rect = btn.getBoundingClientRect();
-    setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-    setMenuOpenId(id);
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    setMenuOpenId(null);
-  }, []);
-  const [restoreTargetId, setRestoreTargetId] = useState<string | null>(null);
-  const [convertTargetId, setConvertTargetId] = useState<string | null>(null);
-  const [moodCheckOpen, setMoodCheckOpen] = useState(false);
-  const [movaContext, setMovaContext] = useState<MovaContext>(() => {
-    const total = quests.단기.length + quests.장기.length;
-    if (total === 0) return "empty";
-    return "idle";
-  });
-  const { showToast } = useToast();
+  // 서버 에러 → 토스트
+  useEffect(() => {
+    if (error) {
+      showToast("퀘스트를 불러오지 못했어요", "새로고침 후 다시 시도해주세요");
+    }
+  }, [error, showToast]);
 
   // 추천에서 넘어왔을 때 안내 토스트
   const hasShownNewQuestToast = useRef(false);
@@ -86,300 +77,34 @@ export default function QuestPage() {
     }
   }, [searchParams, showToast]);
 
-  // 타이머 ID를 추적해서 undo/unmount 시 정리
-  const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => {
-    return () => {
-      timerRefs.current.forEach(clearTimeout);
-    };
-  }, []);
-
-  const clearTimers = () => {
-    timerRefs.current.forEach(clearTimeout);
-    timerRefs.current = [];
-  };
-
-  const trackTimeout = (fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms);
-    timerRefs.current.push(id);
-    return id;
-  };
-
-  const toggleDone = (id: string) => {
-    // 현재 상태 읽어서 사이드이펙트 판단
-    const toggled = [...quests.단기, ...quests.장기].find((q) => q.id === id);
-    if (!toggled || toggled.done) return;
-
-    // 상태 업데이트 (순수)
-    setQuests((prev) => {
-      const next: QuestState = {
-        ...prev,
-        단기: prev.단기.map((q) => (q.id === id ? { ...q, done: true } : q)),
-        장기: prev.장기.map((q) => (q.id === id ? { ...q, done: true } : q)),
-      };
-
-      // 장기 100% 달성 체크
-      if (toggled && !toggled.done && toggled.parentId) {
-        const pid = toggled.parentId;
-        const allChildren = next.단기.filter((q) => q.parentId === pid);
-        const allDone =
-          allChildren.length > 0 && allChildren.every((q) => q.done);
-        if (allDone) {
-          const parent = next.장기.find((q) => q.id === pid);
-          if (parent && !parent.done) {
-            next.장기 = next.장기.map((q) =>
-              q.id === pid ? { ...q, done: true } : q,
-            );
-          }
-        }
-      }
-
-      return next;
-    });
-
-    // 보상 지급
-    const { addPoints, addXP } = useRewardStore.getState();
-    if (toggled.source === "ai") {
-      addXP(toggled.points);
-    } else {
-      addPoints(toggled.points);
-    }
-
-    // 사이드이펙트 (토스트/모달) — setQuests 밖에서 실행
-    if (toggled && !toggled.done) {
-      const rewardType = toggled.source === "ai" ? "XP" : "포인트";
-      showToast(`+${toggled.points} ${rewardType} 완료!`, "");
-      setMovaContext("questDone");
-
-      // 장기 100% 달성 체크
-      if (toggled.parentId) {
-        const pid = toggled.parentId;
-        const remaining = quests.단기.filter(
-          (q) => q.parentId === pid && q.id !== id && !q.done,
-        );
-        if (remaining.length === 0) {
-          const parent = quests.장기.find((q) => q.id === pid);
-          if (parent && !parent.done) {
-            setMovaContext("longTermDone");
-            trackTimeout(
-              () =>
-                showToast(
-                  `목표 달성!`,
-                  `'${parent.title}' 완료 +${parent.points} XP`,
-                ),
-              2600,
-            );
-            trackTimeout(() => setMoodCheckOpen(true), 5200);
-          }
-        }
-      }
-
-      // 전부 완료 체크
-      const allShortDone = quests.단기.every((q) => q.id === id || q.done);
-      if (allShortDone && quests.단기.length > 0) {
-        setMovaContext("allDone");
-      }
-    } else {
-      clearTimers();
-    }
-  };
-
-  /** 돌려놓기: done → !done + 장기가 done이면 장기도 복원 */
-  const handleRestore = (id: string) => {
-    setQuests((prev) => {
-      const tab = prev.단기.find((q) => q.id === id) ? "단기" : "장기";
-      const quest = prev[tab].find((q) => q.id === id);
-      if (!quest) return prev;
-
-      const next: QuestState = {
-        ...prev,
-        단기: prev.단기.map((q) => (q.id === id ? { ...q, done: false } : q)),
-        장기: [...prev.장기],
-      };
-
-      // parentId가 있고 해당 장기가 done이면 장기도 복원
-      if (quest.parentId) {
-        next.장기 = next.장기.map((q) =>
-          q.id === quest.parentId ? { ...q, done: false } : q,
-        );
-      }
-
-      return next;
-    });
-    setRestoreTargetId(null);
-  };
-
-  /** 새 단기로 추가: 완료 항목 유지 + 동일 제목의 새 단기 생성 */
-  const handleAddAsNew = async (id: string) => {
-    const quest = [...quests.단기, ...quests.장기].find((q) => q.id === id);
-    if (!quest) return;
-    try {
-      const inserted = await questApi.insertQuest(
-        { title: quest.title, date: today(), points: 10, done: false, source: "user" },
-        "단기",
-      );
-      setQuests((prev) => ({ ...prev, 단기: [inserted, ...prev.단기] }));
-    } catch (e) {
-      console.error("Failed to add quest:", e);
-    }
-    setRestoreTargetId(null);
-  };
-
-  /** 보류로 이동 */
-  const holdQuest = (id: string) => {
-    setQuests((prev) => {
-      const fromShort = prev.단기.find((q) => q.id === id);
-      const fromLong = prev.장기.find((q) => q.id === id);
-      const quest = fromShort || fromLong;
-      if (!quest) return prev;
-      const originTab: "단기" | "장기" = fromShort ? "단기" : "장기";
-      return {
-        ...prev,
-        단기: prev.단기.filter((q) => q.id !== id),
-        장기: prev.장기.filter((q) => q.id !== id),
-        보류: [...prev.보류, { ...quest, originTab }],
-      };
-    });
-    setMenuOpenId(null);
-  };
-
-  /** 보류에서 원래 탭으로 복원 */
-  const resumeQuest = (id: string) => {
-    setQuests((prev) => {
-      const quest = prev.보류.find((q) => q.id === id);
-      if (!quest) return prev;
-      const target = quest.originTab ?? "단기";
-      return {
-        ...prev,
-        보류: prev.보류.filter((q) => q.id !== id),
-        [target]: [...prev[target], { ...quest, originTab: undefined }],
-      };
-    });
-    setMenuOpenId(null);
-  };
-
-  /** 단기 → 장기로 변환 */
-  const convertToLong = (id: string) => {
-    setQuests((prev) => {
-      const quest = prev.단기.find((q) => q.id === id);
-      if (!quest) return prev;
-      return {
-        ...prev,
-        단기: prev.단기.filter((q) => q.id !== id),
-        장기: [{ ...quest, parentId: undefined, points: 100 }, ...prev.장기],
-      };
-    });
-    setMenuOpenId(null);
-  };
-
-  /** 장기 → 단기로 변환 (연결된 단기의 parentId 해제) */
-  const convertToShort = (id: string) => {
-    setQuests((prev) => {
-      const quest = prev.장기.find((q) => q.id === id);
-      if (!quest) return prev;
-      return {
-        ...prev,
-        장기: prev.장기.filter((q) => q.id !== id),
-        단기: [
-          { ...quest, points: 10 },
-          ...prev.단기.map((q) =>
-            q.parentId === id ? { ...q, parentId: undefined } : q,
-          ),
-        ],
-      };
-    });
-    setConvertTargetId(null);
-    setMenuOpenId(null);
-  };
-
-  /** 장기→단기 변환 시도: 연결된 단기가 있으면 모달, 없으면 바로 변환 */
-  const tryConvertToShort = (id: string) => {
-    const hasChildren = quests.단기.some((q) => q.parentId === id);
-    setMenuOpenId(null);
-    if (hasChildren) {
-      setConvertTargetId(id);
-    } else {
-      convertToShort(id);
-    }
-  };
-
   const openRoutineModal = (questId: string) => {
     setModalQuestId(questId);
     setModalOpen(true);
   };
 
-  const deleteQuest = (id: string) => {
-    setQuests((prev) => ({
-      단기: prev.단기.filter((q) => q.id !== id),
-      장기: prev.장기.filter((q) => q.id !== id),
-      보류: prev.보류.filter((q) => q.id !== id),
-    }));
-    setMenuOpenId(null);
-  };
-
-  const startEdit = (id: string) => {
-    setEditingId(id);
-    setMenuOpenId(null);
-  };
-
-  const addInlineQuest = async (tab: Tab) => {
-    if (tab === "보류") return;
-    const points = tab === "장기" ? 100 : 10;
-    try {
-      const inserted = await questApi.insertQuest(
-        { title: "", date: today(), points, done: false, source: "user" },
-        tab,
-      );
-      setQuests((prev) => ({ ...prev, [tab]: [inserted, ...prev[tab]] }));
-      setEditingId(inserted.id);
-    } catch (e) {
-      console.error("Failed to add quest:", e);
-    }
-  };
-
-  const commitInlineTitle = (id: string, title: string) => {
-    const trimmed = title.trim();
-    if (!trimmed) {
-      deleteQuest(id);
-    } else {
-      setQuests((prev) => ({
-        ...prev,
-        단기: prev.단기.map((q) =>
-          q.id === id ? { ...q, title: trimmed } : q,
-        ),
-        장기: prev.장기.map((q) =>
-          q.id === id ? { ...q, title: trimmed } : q,
-        ),
-      }));
-    }
-    setEditingId(null);
-  };
-
-  const handleRoutineSubmit = async (routines: string[]) => {
-    const parentId = modalQuestId ?? undefined;
-    const newQuests = routines.map((title) => ({
-      title,
-      date: today(),
-      points: 20,
-      done: false,
-      parentId,
-      source: "user" as const,
-    }));
-    try {
-      const inserted = await questApi.insertQuests(newQuests, "단기");
-      setQuests((prev) => ({ ...prev, 단기: [...inserted, ...prev.단기] }));
-    } catch (e) {
-      console.error("Failed to add routines:", e);
-    }
-  };
-
   const items = sortByDone(quests[activeTab]);
 
-  const restoreTarget = restoreTargetId
-    ? ([...quests.단기, ...quests.장기].find((q) => q.id === restoreTargetId) ??
-      null)
-    : null;
+  if (isLoading && !serverQuests)
+    return (
+      <div className="relative flex min-h-[80vh] w-full items-start justify-center gap-6 px-6 pt-10">
+        <div className="flex w-full max-w-[34rem] flex-col gap-4">
+          <div className="flex gap-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-surface-elevated h-[2.25rem] w-[4.5rem] animate-pulse rounded-full"
+              />
+            ))}
+          </div>
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-surface-elevated h-[4rem] animate-pulse rounded-2xl"
+            />
+          ))}
+        </div>
+      </div>
+    );
 
   return (
     <>
@@ -497,7 +222,9 @@ export default function QuestPage() {
             : quests.단기.map((q) => ({ title: q.title, done: q.done }))
         }
         onClose={() => setModalOpen(false)}
-        onSubmit={handleRoutineSubmit}
+        onSubmit={(routines) =>
+          handleRoutineSubmit(routines, modalQuestId ?? undefined)
+        }
       />
       <div className="relative flex h-[calc(100dvh-16rem)] w-full justify-center">
         {/* 메인 퀘스트 리스트 */}
@@ -514,7 +241,7 @@ export default function QuestPage() {
                   className={`relative flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold transition-all ${
                     isActive
                       ? ""
-                      : "border-border-default border hover:border-text-faint"
+                      : "border-border-default hover:border-text-faint border"
                   }`}
                   style={{
                     color: isActive ? "var(--on-accent)" : "var(--text-muted)",
@@ -626,11 +353,7 @@ export default function QuestPage() {
                                   onClick={() => startEdit(quest.id)}
                                   className="flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium text-[#333333] hover:bg-[#f5f5f5]"
                                 >
-                                  <Pencil
-                                    size={15}
-                                    strokeWidth={1.5}
-                                    color="#555"
-                                  />
+                                  <Pencil size={15} strokeWidth={1.5} color="#555" />
                                   수정
                                 </button>
                               )}
@@ -651,11 +374,7 @@ export default function QuestPage() {
                                   onClick={() => convertToLong(quest.id)}
                                   className="flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium text-[#777777] hover:bg-[#f5f5f5]"
                                 >
-                                  <ArrowRightLeft
-                                    size={15}
-                                    strokeWidth={1.5}
-                                    color="#777"
-                                  />
+                                  <ArrowRightLeft size={15} strokeWidth={1.5} color="#777" />
                                   장기로 변경
                                 </button>
                               )}
@@ -664,11 +383,7 @@ export default function QuestPage() {
                                   onClick={() => tryConvertToShort(quest.id)}
                                   className="flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium text-[#777777] hover:bg-[#f5f5f5]"
                                 >
-                                  <ArrowRightLeft
-                                    size={15}
-                                    strokeWidth={1.5}
-                                    color="#777"
-                                  />
+                                  <ArrowRightLeft size={15} strokeWidth={1.5} color="#777" />
                                   단기로 변경
                                 </button>
                               )}
@@ -677,11 +392,7 @@ export default function QuestPage() {
                                   onClick={() => holdQuest(quest.id)}
                                   className="text-text-muted flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium hover:bg-[#f5f5f5]"
                                 >
-                                  <Pause
-                                    size={15}
-                                    strokeWidth={1.5}
-                                    color="#999"
-                                  />
+                                  <Pause size={15} strokeWidth={1.5} color="#999" />
                                   보류
                                 </button>
                               )}
@@ -867,7 +578,7 @@ export default function QuestPage() {
           )}
         </div>
 
-        {/* 데스크톱 사이드 패널 — 메인 오른쪽에 absolute 배치 */}
+        {/* 데스크톱 사이드 패널 */}
         <div className="absolute top-0 left-[calc(50%+var(--ui-content-width)/2+1.5rem)] hidden lg:block">
           <QuestSidePanel
             단기={quests.단기}

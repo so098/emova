@@ -6,7 +6,11 @@ import { motion } from "framer-motion";
 import { fetchRecommendations, type Recommendation } from "@/app/recommend/actions";
 import { ROUTES } from "@/constants/routes";
 import CelebrationToast from "@/components/CelebrationToast";
-import { useQuestStore, today } from "@/store/questStore";
+import { today } from "@/store/questStore";
+import { useSessionStore } from "@/store/sessionStore";
+import { useToast } from "@/components/ToastStack";
+import { useAddQuests } from "@/features/quest/useQuests";
+import { useFinishFlow } from "@/features/flow/useFlowMutations";
 
 interface RecommendListProps {
   questionLabel: string;
@@ -25,6 +29,7 @@ export default function RecommendList({
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -33,9 +38,15 @@ export default function RecommendList({
       prev.includes(i) ? prev.filter((v) => v !== i) : [...prev, i]
     );
 
-  const addShortQuests = useQuestStore((s) => s.addShortQuests);
+  const addQuestsMutation = useAddQuests();
+  const finishFlow = useFinishFlow();
+  const supabaseSessionId = useSessionStore((s) => s.supabaseSessionId);
+  const { showToast: showErrorToast } = useToast();
 
-  const handleDone = () => {
+  const handleDone = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
     // 선택한 추천 + 직접 입력을 퀘스트 store에 추가
     const dateStr = today();
     const newQuests = [
@@ -50,7 +61,36 @@ export default function RecommendList({
         ? [{ title: customValue.trim(), date: dateStr, points: 20, done: false, source: "user" as const }]
         : []),
     ];
-    if (newQuests.length > 0) addShortQuests(newQuests);
+    if (newQuests.length > 0) {
+      addQuestsMutation.mutate({ quests: newQuests, category: "단기" });
+    }
+
+    // DB 저장: desires + actions + 세션 완료
+    if (supabaseSessionId) {
+      const dbActions = [
+        ...items.map((item, i) => ({
+          text: item.title,
+          source: "system" as const,
+          selected: selected.includes(i),
+        })),
+        ...(customValue.trim()
+          ? [{ text: customValue.trim(), source: "custom" as const, selected: true }]
+          : []),
+      ];
+      try {
+        await finishFlow.mutateAsync({
+          sessionId: supabaseSessionId,
+          questionLabel,
+          questionText,
+          actions: dbActions,
+        });
+      } catch (e) {
+        console.error("Failed to save flow:", e);
+        showErrorToast("저장에 실패했어요", "다시 시도해주세요");
+        setIsSaving(false);
+        return;
+      }
+    }
 
     if (timerRef.current) clearTimeout(timerRef.current);
     setShowToast(true);
@@ -157,9 +197,10 @@ export default function RecommendList({
           </button>
           <button
             onClick={handleDone}
-            className="flex-1 rounded-xl bg-brand-primary py-3 text-sm font-bold text-on-accent transition-opacity hover:opacity-85"
+            disabled={isSaving}
+            className="flex-1 rounded-xl bg-brand-primary py-3 text-sm font-bold text-on-accent transition-opacity hover:opacity-85 disabled:opacity-50"
           >
-            다 했어요
+            {isSaving ? "저장 중..." : "다 했어요"}
           </button>
         </div>
       </div>

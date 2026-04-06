@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import AppChrome from "@/components/AppChrome";
 import AuthProvider from "@/components/AuthProvider";
+import QueryProvider from "@/components/QueryProvider";
 import { ToastProvider } from "@/components/ToastStack";
 
 const pretendard = localFont({
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="ko" className={pretendard.variable}>
       <body className="font-pretendard antialiased">
         <div className="noise-layer" aria-hidden="true" />
+        <QueryProvider>
         <AuthProvider>
         <ToastProvider>
           <div className="relative z-10 mx-auto flex min-h-dvh flex-col">
@@ -42,6 +44,7 @@ export default function RootLayout({
           </div>
         </ToastProvider>
         </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

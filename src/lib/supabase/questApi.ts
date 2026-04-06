@@ -15,6 +15,7 @@ interface DbQuestRow {
   completed_at: string | null;
   parent_id: string | null;
   category: string;
+  origin_category: string | null;
 }
 
 /* ── 매핑 헬퍼 ── */
@@ -66,8 +67,7 @@ export async function fetchQuests(): Promise<QuestState> {
     const quest = fromDbRow(row);
     const cat = row.category as keyof QuestState;
     if (cat === "보류") {
-      // 보류 탭: originTab 복원 (보류 전 원래 카테고리는 알 수 없으므로 단기 기본)
-      quest.originTab = "단기";
+      quest.originTab = (row.origin_category as "단기" | "장기") ?? "단기";
     }
     if (state[cat]) {
       state[cat].push(quest);
@@ -147,11 +147,18 @@ export async function updateQuestStatus(
 export async function updateQuestCategory(
   id: string,
   category: "단기" | "장기" | "보류",
+  originCategory?: "단기" | "장기",
 ): Promise<void> {
   const supabase = createClient();
+  const updates: Record<string, unknown> = { category };
+  if (category === "보류" && originCategory) {
+    updates.origin_category = originCategory;
+  } else if (category !== "보류") {
+    updates.origin_category = null;
+  }
   const { error } = await supabase
     .from("quests")
-    .update({ category })
+    .update(updates)
     .eq("id", id);
   if (error) throw error;
 }

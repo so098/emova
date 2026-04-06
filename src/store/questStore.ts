@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import * as questApi from "@/lib/supabase/questApi";
 
 export interface Quest {
   id: string;
@@ -19,12 +18,7 @@ export interface QuestState {
 }
 
 interface QuestStore extends QuestState {
-  isLoading: boolean;
-  isLoaded: boolean;
-  loadQuests: () => Promise<void>;
-  reloadQuests: () => Promise<void>;
   setQuests: (updater: (prev: QuestState) => QuestState) => void;
-  addShortQuests: (quests: Omit<Quest, "id">[]) => Promise<void>;
 }
 
 export function today() {
@@ -32,37 +26,10 @@ export function today() {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export const useQuestStore = create<QuestStore>((set, get) => ({
+export const useQuestStore = create<QuestStore>((set) => ({
   단기: [],
   장기: [],
   보류: [],
-  isLoading: false,
-  isLoaded: false,
-
-  loadQuests: async () => {
-    if (get().isLoaded) return;
-    set({ isLoading: true });
-    try {
-      const state = await questApi.fetchQuests();
-      set({ ...state, isLoaded: true });
-    } catch (e) {
-      console.error("Failed to load quests:", e);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  reloadQuests: async () => {
-    set({ isLoading: true });
-    try {
-      const state = await questApi.fetchQuests();
-      set({ ...state, isLoaded: true });
-    } catch (e) {
-      console.error("Failed to reload quests:", e);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
 
   setQuests: (updater) =>
     set((state) => {
@@ -73,13 +40,4 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
       });
       return { 단기, 장기, 보류 };
     }),
-
-  addShortQuests: async (quests) => {
-    try {
-      const inserted = await questApi.insertQuests(quests, "단기");
-      set((state) => ({ 단기: [...inserted, ...state.단기] }));
-    } catch (e) {
-      console.error("Failed to add quests:", e);
-    }
-  },
 }));

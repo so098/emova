@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useRemoveQuestCache } from "@/features/quest/useQuests";
 
 export default function AuthProvider({
   children,
@@ -9,6 +10,7 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   const initialized = useRef(false);
+  const removeQuestCache = useRemoveQuestCache();
 
   useEffect(() => {
     if (initialized.current) return;
@@ -23,7 +25,16 @@ export default function AuthProvider({
         if (error) console.error("[AuthProvider] anonymous sign-in failed:", error.message);
       }
     })();
-  }, []);
+
+    // auth 상태 변경 시 React Query 캐시 리셋
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT" || event === "USER_UPDATED" || event === "SIGNED_IN") {
+        removeQuestCache();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [removeQuestCache]);
 
   return <>{children}</>;
 }

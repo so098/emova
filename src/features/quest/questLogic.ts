@@ -96,6 +96,33 @@ export function remove(prev: QuestState, id: string): QuestState {
   };
 }
 
+/** 단기 → 장기로 변환 */
+export function convertToLong(prev: QuestState, id: string): QuestState {
+  const quest = prev.단기.find((q) => q.id === id);
+  if (!quest) return prev;
+  return {
+    ...prev,
+    단기: prev.단기.filter((q) => q.id !== id),
+    장기: [{ ...quest, parentId: undefined, points: 100 }, ...prev.장기],
+  };
+}
+
+/** 장기 → 단기로 변환 (연결된 단기의 parentId 해제) */
+export function convertToShort(prev: QuestState, id: string): QuestState {
+  const quest = prev.장기.find((q) => q.id === id);
+  if (!quest) return prev;
+  return {
+    ...prev,
+    장기: prev.장기.filter((q) => q.id !== id),
+    단기: [
+      { ...quest, points: 10 },
+      ...prev.단기.map((q) =>
+        q.parentId === id ? { ...q, parentId: undefined } : q,
+      ),
+    ],
+  };
+}
+
 /** 미완료를 위로, 완료를 아래로 정렬 */
 export function sortByDone(list: Quest[]): Quest[] {
   return [...list.filter((q) => !q.done), ...list.filter((q) => q.done)];

@@ -7,6 +7,8 @@ import SectionTitle from "@/components/SectionTitle";
 import { HelpCircle, Snail, Ban, Sprout, Zap, PenLine } from "lucide-react";
 import type { ElementType } from "react";
 import { useSessionStore } from "@/store/sessionStore";
+import { useToast } from "@/components/ToastStack";
+import { useStartFlow } from "@/features/flow/useFlowMutations";
 
 const ITEMS: { key: string; label: string; color: string; Icon: ElementType }[] = [
   { key: "unknown", label: "뭘 원하는지\n모르겠다", color: "#4894ff", Icon: HelpCircle },
@@ -26,6 +28,20 @@ export default function GridSection() {
   const [customValue, setCustomValue] = useState("");
   const [customConfirmed, setCustomConfirmed] = useState(false);
   const setGrid = useSessionStore((s) => s.setGrid);
+  const setSupabaseSessionId = useSessionStore((s) => s.setSupabaseSessionId);
+  const { showToast } = useToast();
+  const startFlow = useStartFlow();
+
+  /** 그리드 선택 시 세션 생성 + 생각 저장 */
+  const saveToDb = (thoughtKey: string, customText?: string) => {
+    startFlow.mutate(
+      { thoughtKey, customText },
+      {
+        onSuccess: (sessionId) => setSupabaseSessionId(sessionId),
+        onError: () => showToast("저장에 실패했어요", "잠시 후 다시 시도해주세요"),
+      },
+    );
+  };
 
   /** 공백 포함 6자 초과 시 말줄임 */
   const truncateLabel = (text: string) =>
@@ -61,6 +77,7 @@ export default function GridSection() {
                 setCustomValue("");
                 setGrid(ITEMS[i].label.replace("\n", " "));
                 updateThought(ITEMS[i].key);
+                saveToDb(ITEMS[i].key);
               }
             }}
             whileTap={{ scale: 0.91 }}
@@ -109,6 +126,7 @@ export default function GridSection() {
               setCustomOpen(false);
               setGrid(val);
               updateThought(val);
+              saveToDb("custom", val);
             }}
             className="shrink-0 rounded-xl bg-[var(--ui-button-primary)] px-4 py-3 text-sm font-medium text-on-accent transition-opacity disabled:opacity-40"
           >
