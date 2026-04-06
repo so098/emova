@@ -7,9 +7,8 @@ import RoutineModal from "@/features/quest/RoutineModal";
 import MoodCheckModal from "@/features/quest/MoodCheckModal";
 import QuestSidePanel from "@/features/quest/QuestSidePanel";
 import QuestCard from "@/features/quest/QuestCard";
-import { ConvertToShortModal, RestoreModal } from "@/features/quest/QuestConfirmModals";
+import { ConvertToShortModal, RestoreModal, DeleteQuestModal } from "@/features/quest/QuestConfirmModals";
 import { useToast } from "@/components/ToastStack";
-import { Plus } from "lucide-react";
 import { sortByDone } from "./questLogic";
 import { useQuestActions } from "./useQuestActions";
 import { useQuests } from "./useQuests";
@@ -23,6 +22,7 @@ export default function QuestPage() {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalQuestId, setModalQuestId] = useState<string | null>(null);
+  const [modalReadOnly, setModalReadOnly] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const { data: serverQuests, isLoading, error } = useQuests();
@@ -41,7 +41,8 @@ export default function QuestPage() {
     handleRestore, handleAddAsNew,
     holdQuest, resumeQuest,
     convertToLong, convertToShort, tryConvertToShort,
-    deleteQuest,
+    deleteTargetId, setDeleteTargetId, deleteHasChildren,
+    tryDeleteQuest, deleteDetachChildren, deleteWithChildren,
     startEdit, addInlineQuest, commitInlineTitle,
     handleRoutineSubmit,
     openMenu, closeMenu,
@@ -93,6 +94,13 @@ export default function QuestPage() {
         onAddAsNew={handleAddAsNew}
         onCancel={() => setRestoreTargetId(null)}
       />
+      <DeleteQuestModal
+        targetId={deleteTargetId}
+        hasChildren={deleteHasChildren}
+        onDetachAndDelete={deleteDetachChildren}
+        onDeleteAll={deleteWithChildren}
+        onCancel={() => setDeleteTargetId(null)}
+      />
       <RoutineModal
         open={modalOpen}
         existingRoutines={
@@ -100,8 +108,9 @@ export default function QuestPage() {
             ? quests.단기.filter((q) => q.parentId === modalQuestId).map((q) => ({ title: q.title, done: q.done }))
             : quests.단기.map((q) => ({ title: q.title, done: q.done }))
         }
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setModalReadOnly(false); }}
         onSubmit={(routines) => handleRoutineSubmit(routines, modalQuestId ?? undefined)}
+        readOnly={modalReadOnly}
       />
 
       <div className="relative flex h-[calc(100dvh-16rem)] w-full justify-center">
@@ -147,12 +156,12 @@ export default function QuestPage() {
             {items.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-16">
                 <span className="text-sm font-medium text-[#bbbbbb]">{activeTab} 퀘스트가 없어요</span>
-                {activeTab !== "보류" && (
+                {(activeTab === "단기" || activeTab === "장기") && (
                   <button
                     onClick={() => addInlineQuest(activeTab)}
-                    className="bg-brand-primary text-on-accent rounded-full px-5 py-2.5 text-sm font-bold shadow-[0_4px_12px_rgba(255,148,55,0.4)]"
+                    className="bg-brand-primary text-on-accent rounded-full px-5 py-2.5 text-sm font-bold shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
                   >
-                    추가하기
+                    생성하기
                   </button>
                 )}
               </div>
@@ -173,26 +182,24 @@ export default function QuestPage() {
                   convertToShort: tryConvertToShort,
                   hold: holdQuest,
                   resume: resumeQuest,
-                  delete: deleteQuest,
-                  openRoutine: (id) => { setModalQuestId(id); setModalOpen(true); },
+                  delete: tryDeleteQuest,
+                  openRoutine: (id) => { setModalQuestId(id); setModalReadOnly(activeTab === "보류"); setModalOpen(true); },
                 }}
               />
             ))}
+
           </div>
 
-          {/* 추가 버튼 */}
-          {activeTab !== "보류" && (
-            <motion.button
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileTap={{ scale: 0.97 }}
+          {/* + 퀘스트 추가 (하단 고정) */}
+          {(activeTab === "단기" || activeTab === "장기") && (
+            <button
               onClick={() => addInlineQuest(activeTab)}
-              className="mt-3 flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl border border-dashed border-[#e0d5c5] bg-[#fdfaf6] px-5 py-3.5 transition-colors hover:border-[#d4c4ad] hover:bg-[#faf5ed]"
+              className="bg-brand-primary text-on-accent shrink-0 rounded-full py-3 text-sm font-bold shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
             >
-              <Plus size={16} strokeWidth={2.2} color="var(--accent-gold)" />
-              <span className="text-accent-gold text-sm font-medium">퀘스트 추가</span>
-            </motion.button>
+              + 퀘스트 추가
+            </button>
           )}
+
         </div>
 
         {/* 사이드 패널 */}

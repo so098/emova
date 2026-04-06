@@ -14,6 +14,7 @@ interface RoutineModalProps {
   existingRoutines: ExistingRoutine[];
   onClose: () => void;
   onSubmit: (routines: string[]) => void;
+  readOnly?: boolean;
 }
 
 export default function RoutineModal({
@@ -21,6 +22,7 @@ export default function RoutineModal({
   existingRoutines,
   onClose,
   onSubmit,
+  readOnly = false,
 }: RoutineModalProps) {
   const [inputs, setInputs] = useState<string[]>([]);
 
@@ -77,10 +79,10 @@ export default function RoutineModal({
                 <PenLine size={22} strokeWidth={2} color="var(--accent-gold)" />
               </div>
               <h2 className="text-base font-bold text-text-primary">
-                오늘 할 작은 루틴 적기
+                {readOnly ? "연결된 단기 퀘스트" : "오늘 할 작은 루틴 적기"}
               </h2>
               <p className="text-xs text-text-muted">
-                작은 실천이 큰 변화를 만들어요
+                {readOnly ? "보류된 장기 퀘스트에 연결된 단기 퀘스트 목록입니다" : "작은 실천이 큰 변화를 만들어요"}
               </p>
             </div>
 
@@ -116,7 +118,7 @@ export default function RoutineModal({
               ))}
 
               {/* 새 입력 */}
-              {inputs.map((value, i) => (
+              {!readOnly && inputs.map((value, i) => (
                 <motion.div
                   key={`new-${i}`}
                   initial={{ opacity: 0, y: 8 }}
@@ -144,33 +146,46 @@ export default function RoutineModal({
               ))}
             </div>
 
-            {/* + 버튼 */}
-            <div className="mt-4 flex justify-center">
-              <motion.button
-                onClick={addInput}
-                whileTap={{ scale: 0.9 }}
-                className="flex items-center gap-2 rounded-full bg-accent-gold-bg px-4 py-2 text-sm font-semibold text-brand-primary transition-colors hover:bg-accent-gold-bg-hover"
-              >
-                <Plus size={16} strokeWidth={2.2} />
-                루틴 추가
-              </motion.button>
-            </div>
+            {readOnly ? (
+              <div className="mt-6">
+                <button
+                  onClick={onClose}
+                  className="bg-surface-elevated text-text-muted w-full rounded-full py-3.5 text-sm font-bold transition-colors"
+                >
+                  확인
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* + 버튼 */}
+                <div className="mt-4 flex justify-center">
+                  <motion.button
+                    onClick={addInput}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex items-center gap-2 rounded-full bg-accent-gold-bg px-4 py-2 text-sm font-semibold text-brand-primary transition-colors hover:bg-accent-gold-bg-hover"
+                  >
+                    <Plus size={16} strokeWidth={2.2} />
+                    루틴 추가
+                  </motion.button>
+                </div>
 
-            {/* 하단 버튼 */}
-            <div className="mt-6">
-              <button
-                onClick={handleSubmit}
-                className={`w-full rounded-full py-3.5 text-sm font-bold transition-colors ${
-                  hasNewInput
-                    ? "bg-brand-primary text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
-                    : "bg-surface-elevated text-text-muted"
-                }`}
-              >
-                {hasNewInput
-                  ? `${inputs.filter((s) => s.trim()).length}개 루틴 추가하기`
-                  : "다 했어요"}
-              </button>
-            </div>
+                {/* 하단 버튼 */}
+                <div className="mt-6">
+                  <button
+                    onClick={handleSubmit}
+                    className={`w-full rounded-full py-3.5 text-sm font-bold transition-colors ${
+                      hasNewInput
+                        ? "bg-brand-primary text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
+                        : "bg-surface-elevated text-text-muted"
+                    }`}
+                  >
+                    {hasNewInput
+                      ? `${inputs.filter((s) => s.trim()).length}개 루틴 추가하기`
+                      : "다 했어요"}
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         </>
       )}

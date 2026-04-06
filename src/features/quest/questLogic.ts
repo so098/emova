@@ -96,6 +96,24 @@ export function remove(prev: QuestState, id: string): QuestState {
   };
 }
 
+/** 삭제 + 자식 parentId 해제 */
+export function removeDetachChildren(prev: QuestState, id: string): QuestState {
+  return {
+    단기: prev.단기.map((q) => (q.parentId === id ? { ...q, parentId: undefined } : q)),
+    장기: prev.장기.filter((q) => q.id !== id),
+    보류: prev.보류.filter((q) => q.id !== id),
+  };
+}
+
+/** 삭제 + 자식도 함께 삭제 */
+export function removeWithChildren(prev: QuestState, id: string): QuestState {
+  return {
+    단기: prev.단기.filter((q) => q.id !== id && q.parentId !== id),
+    장기: prev.장기.filter((q) => q.id !== id),
+    보류: prev.보류.filter((q) => q.id !== id),
+  };
+}
+
 /** 단기 → 장기로 변환 */
 export function convertToLong(prev: QuestState, id: string): QuestState {
   const quest = prev.단기.find((q) => q.id === id);

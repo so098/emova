@@ -232,7 +232,8 @@ export function useQuestActions(serverQuests?: QuestState) {
     }
   };
 
-  const deleteQuest = (id: string) => {
+  /** 확인 없이 바로 삭제 (빈 제목 인라인 퀘스트 등 내부용) */
+  const deleteQuestSilent = (id: string) => {
     setQuests((prev) => logic.remove(prev, id));
     questApi.deleteQuest(id)
       .then(() => invalidateQuests())
@@ -241,7 +242,58 @@ export function useQuestActions(serverQuests?: QuestState) {
         showToast("삭제에 실패했어요", "");
         invalidateQuests();
       });
+  };
+
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteHasChildren, setDeleteHasChildren] = useState(false);
+
+  const tryDeleteQuest = (id: string) => {
     setMenuOpenId(null);
+    const hasChildren = quests.단기.some((q) => q.parentId === id);
+    setDeleteHasChildren(hasChildren);
+    setDeleteTargetId(id);
+  };
+
+  /** 자식 해제 후 부모만 삭제 */
+  const deleteDetachChildren = (id: string) => {
+    setQuests((prev) => logic.removeDetachChildren(prev, id));
+
+    (async () => {
+      try {
+        // 자식 parent_id 해제는 questApi.deleteQuest 안에서 처리됨
+        await questApi.deleteQuest(id);
+        invalidateQuests();
+      } catch (e) {
+        console.error("Failed to sync delete:", e);
+        showToast("삭제에 실패했어요", "");
+        invalidateQuests();
+      }
+    })();
+
+    setDeleteTargetId(null);
+  };
+
+  /** 부모 + 자식 모두 삭제 */
+  const deleteWithChildren = (id: string) => {
+    const childIds = quests.단기.filter((q) => q.parentId === id).map((q) => q.id);
+    setQuests((prev) => logic.removeWithChildren(prev, id));
+
+    (async () => {
+      try {
+        // 자식 먼저 삭제
+        for (const childId of childIds) {
+          await questApi.deleteQuest(childId);
+        }
+        await questApi.deleteQuest(id);
+        invalidateQuests();
+      } catch (e) {
+        console.error("Failed to sync delete:", e);
+        showToast("삭제에 실패했어요", "");
+        invalidateQuests();
+      }
+    })();
+
+    setDeleteTargetId(null);
   };
 
   const startEdit = (id: string) => {
@@ -268,7 +320,7 @@ export function useQuestActions(serverQuests?: QuestState) {
   const commitInlineTitle = (id: string, title: string) => {
     const trimmed = title.trim();
     if (!trimmed) {
-      deleteQuest(id);
+      deleteQuestSilent(id);
     } else {
       setQuests((prev) => ({
         ...prev,
@@ -321,7 +373,8 @@ export function useQuestActions(serverQuests?: QuestState) {
     handleRestore, handleAddAsNew,
     holdQuest, resumeQuest,
     convertToLong, convertToShort, tryConvertToShort,
-    deleteQuest,
+    deleteTargetId, setDeleteTargetId, deleteHasChildren,
+    tryDeleteQuest, deleteDetachChildren, deleteWithChildren,
     startEdit, addInlineQuest, commitInlineTitle,
     handleRoutineSubmit,
     openMenu, closeMenu,

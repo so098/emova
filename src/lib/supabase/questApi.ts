@@ -192,6 +192,13 @@ export async function updateQuestFields(
 
 export async function deleteQuest(id: string): Promise<void> {
   const supabase = createClient();
+
+  // 자식 퀘스트의 parent_id 해제 (외래키 제약 방지)
+  await supabase
+    .from("quests")
+    .update({ parent_id: null })
+    .eq("parent_id", id);
+
   const { error } = await supabase.from("quests").delete().eq("id", id);
   if (error) throw error;
 }
