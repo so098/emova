@@ -57,7 +57,7 @@ export default function EmotionCardList() {
       }
       const params = new URLSearchParams(searchParams.toString());
       params.set("emotion", ITEMS[globalIndex].label);
-      router.push(`${ROUTES.LOADING}?${params.toString()}`);
+      router.push(`${ROUTES.QUESTION}?${params.toString()}`);
     } else {
       setSelected(globalIndex);
       setEmotionStore(ITEMS[globalIndex].label);

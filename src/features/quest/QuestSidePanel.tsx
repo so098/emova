@@ -77,9 +77,9 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
   return (
     <div className="flex w-[14rem] shrink-0 flex-col gap-3">
       {/* 모바 말풍선 */}
-      <div className="relative rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+      <div className="relative rounded-2xl border border-border-default bg-surface p-4">
         {/* 꼬리 — 왼쪽 */}
-        <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 bg-surface shadow-[-1px_1px_2px_rgba(0,0,0,0.04)]" />
+        <div className="absolute -left-1.5 top-5 h-3 w-3 rotate-45 border-b border-l border-border-default bg-surface" />
         <div className="mb-2 flex items-center gap-2">
           <div className="flex h-[1.75rem] w-[1.75rem] items-center justify-center rounded-full bg-accent-gold-bg">
             <span className="text-sm">🧡</span>
@@ -92,7 +92,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="text-[0.8125rem] leading-relaxed font-medium text-text-secondary"
+            className="text-sm leading-relaxed font-medium text-text-secondary"
           >
             {movaMessage}
           </motion.p>
@@ -100,19 +100,19 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
       </div>
 
       {/* 오늘의 요약 */}
-      <div className="rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-        <h3 className="mb-3 text-xs font-bold text-text-muted">오늘의 현황</h3>
+      <div className="rounded-2xl border border-border-default bg-surface p-4">
+        <h3 className="mb-3 text-xs font-bold text-text-muted">퀘스트 현황</h3>
 
         {/* 단기 진행률 */}
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-medium text-text-secondary">단기</span>
-          <span className="text-xs font-bold text-brand-primary">
+          <span className="text-xs font-bold text-interactive">
             {doneShort}/{totalShort}
           </span>
         </div>
-        <div className="mb-3 h-[0.3125rem] overflow-hidden rounded-full bg-surface-elevated">
+        <div className="mb-3 h-[0.3125rem] overflow-hidden rounded-full bg-bg-muted">
           <motion.div
-            className="h-full rounded-full bg-brand-primary"
+            className="h-full rounded-full bg-point"
             initial={{ width: 0 }}
             animate={{ width: `${shortPercent}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -128,9 +128,9 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
         </div>
 
         {/* 총 포인트 */}
-        <div className="flex items-center justify-between rounded-[0.625rem] bg-[#fff8ef] px-3 py-2">
+        <div className="flex items-center justify-between rounded-[0.625rem] bg-bg-muted px-3 py-2">
           <span className="text-xs font-medium text-text-muted">획득 포인트</span>
-          <span className="text-sm font-bold text-brand-primary">+{totalPoints}</span>
+          <span className="text-xs font-bold text-text-primary">+{totalPoints}</span>
         </div>
       </div>
 
@@ -141,7 +141,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-2xl bg-accent-gold-bg px-4 py-3 text-center text-sm font-semibold text-accent-gold"
+            className="rounded-2xl bg-bg-muted px-4 py-3 text-center text-sm font-semibold text-text-secondary"
           >
             {motivation}
           </motion.div>
@@ -150,7 +150,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
 
       {/* 활동 피드 */}
       {activities.length > 0 && (
-        <div className="rounded-2xl bg-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="rounded-2xl border border-border-default bg-surface p-4">
           <h3 className="mb-3 text-xs font-bold text-text-muted">최근 활동</h3>
           <div className="flex flex-col gap-2">
             <AnimatePresence>
@@ -165,12 +165,12 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
                   <div
                     className={`mt-0.5 h-[0.375rem] w-[0.375rem] shrink-0 rounded-full ${
                       item.type === "streak"
-                        ? "bg-brand-primary"
+                        ? "bg-interactive"
                         : "bg-accent-gold"
                     }`}
                   />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-text-secondary">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-xs font-medium text-text-secondary">
                       {item.text}
                     </span>
                     <span className="text-[0.625rem] text-text-faint">

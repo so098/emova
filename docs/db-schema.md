@@ -14,7 +14,9 @@ survey_sessions (세션)
   ├── survey_actions     (추천 행동 기록)
   ├── reflections        (회고)
   ├── quests             (퀘스트 인스턴스)
-  └── xp_ledger          (XP 적립)
+  └── xp_ledger          (XP/포인트 적립)
+
+user_achievements (업적 해금 기록)
 
 action_catalog (행동 마스터)
   ├── suggestion_rules   (추천 규칙)
@@ -210,19 +212,37 @@ AI 추천 행동 + 사용자 직접 입력 행동. **세션마다 누적된다.*
 
 ---
 
-### 10. xp_ledger — XP 적립 내역
+### 10. xp_ledger — XP/포인트 적립 내역
 
-모든 XP/포인트 변동 기록. 누적 XP = SUM(delta).
+모든 XP/포인트 변동 기록. 누적 = SUM(delta) WHERE type = 'xp' 또는 'points'.
 
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid (PK) | |
 | client_id | uuid | 사용자 ID |
+| type | text | `xp` 또는 `points` (CHECK 제약) |
 | delta | int | 변동량 (+/-) |
 | reason | text | 사유 (퀘스트 완료, 회고 작성 등) |
 | session_id | uuid (FK) | |
 | quest_id | uuid (FK) | |
 | created_at | timestamptz | |
+
+**인덱스:** `(client_id, type)` 복합 인덱스
+
+---
+
+### 11. user_achievements — 업적 해금 기록
+
+사용자별 해금된 업적. 해금 시점 기록용.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| id | uuid (PK) | |
+| client_id | uuid | 사용자 ID |
+| achievement_key | text | 업적 키 (예: `emotion_explorer`) |
+| unlocked_at | timestamptz | 해금 시각 |
+
+**UNIQUE 제약:** `(client_id, achievement_key)` — 중복 해금 방지
 
 ---
 
@@ -236,6 +256,7 @@ AI 추천 행동 + 사용자 직접 입력 행동. **세션마다 누적된다.*
 | 004_alter_enums_to_text.sql | thought_key, emotion_key enum → text 변환 | 적용됨 |
 | 005_schema_cleanup.sql | category 추가, user_id 제거, updated_at, 복합 인덱스, thought UNIQUE | 적용됨 |
 | 006_rename_retrospectives_to_reflections.sql | retrospectives → reflections 테이블명 변경 | 미적용 |
+| 007_add_user_achievements_and_ledger_type.sql | user_achievements 생성, xp_ledger에 type 컬럼 추가 | 미적용 |
 
 ---
 

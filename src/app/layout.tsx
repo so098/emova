@@ -6,6 +6,7 @@ import AppChrome from "@/components/AppChrome";
 import AuthProvider from "@/components/AuthProvider";
 import QueryProvider from "@/components/QueryProvider";
 import { ToastProvider } from "@/components/ToastStack";
+import RewardSync from "@/features/reward/RewardSync";
 
 const pretendard = localFont({
   src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -30,6 +31,7 @@ export default function RootLayout({
         <div className="noise-layer" aria-hidden="true" />
         <QueryProvider>
         <AuthProvider>
+        <RewardSync />
         <ToastProvider>
           <div className="relative z-10 mx-auto flex min-h-dvh flex-col">
             {/* 고정 UI — 페이지 전환 시 유지 */}

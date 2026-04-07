@@ -6,6 +6,7 @@ export interface Quest {
   date: string;
   points: number;
   done: boolean;
+  memo?: string;
   parentId?: string;
   originTab?: "단기" | "장기";
   source?: "user" | "ai" | "survey";

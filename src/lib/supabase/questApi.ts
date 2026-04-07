@@ -32,6 +32,7 @@ function fromDbRow(row: DbQuestRow): Quest {
     date: formatDate(row.created_at),
     points: row.xp_reward,
     done: row.status === "done",
+    memo: row.description ?? undefined,
     parentId: row.parent_id ?? undefined,
     originTab: row.category === "보류" ? undefined : undefined,
     source: row.source as Quest["source"],
@@ -171,6 +172,19 @@ export async function updateQuestTitle(
   const { error } = await supabase
     .from("quests")
     .update({ title })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** 실��� 메모 저장 */
+export async function updateQuestMemo(
+  id: string,
+  memo: string,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("quests")
+    .update({ description: memo })
     .eq("id", id);
   if (error) throw error;
 }

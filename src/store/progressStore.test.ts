@@ -28,8 +28,6 @@ describe("progressStore", () => {
   it("next()는 PROGRESS_FLOW에서 다음 경로를 반환한다", () => {
     expect(useProgressStore.getState().next()).toBe("/emotion");
     useProgressStore.getState().advance();
-    expect(useProgressStore.getState().next()).toBe("/loading");
-    useProgressStore.getState().advance();
     expect(useProgressStore.getState().next()).toBe("/question");
   });
 

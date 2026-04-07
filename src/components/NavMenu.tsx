@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Smile, Zap, BookOpen } from "lucide-react";
+import { Smile, Zap, BookOpen, User } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { useSessionStore } from "@/store/sessionStore";
 import { useProgressStore } from "@/store/progressStore";
@@ -12,11 +12,12 @@ const ITEMS = [
   { label: "모바",   Icon: Smile,    href: ROUTES.HOME },
   { label: "퀘스트", Icon: Zap,      href: ROUTES.QUEST },
   { label: "회고",   Icon: BookOpen, href: ROUTES.REFLECT },
+  { label: "내 정보", Icon: User,    href: ROUTES.PROFILE },
 ];
 
 const spring = { layout: { type: "spring" as const, stiffness: 380, damping: 28 } };
 
-const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.LOADING, ROUTES.QUESTION, ROUTES.RECOMMEND];
+const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.QUESTION, ROUTES.RECOMMEND];
 
 /** 현재 경로가 해당 메뉴 항목에 속하는지 판별 */
 function isActive(href: string, pathname: string) {
@@ -52,7 +53,7 @@ function NavItem({
       {active && (
         <motion.div
           layoutId={layoutId}
-          className="absolute inset-0 rounded-[0.875rem] bg-[linear-gradient(135deg,var(--brand-logo)_0%,var(--ui-button-primary)_100%)] shadow-[0_0.25rem_0.875rem_var(--shadow-nav)]"
+          className="absolute inset-0 rounded-[0.875rem] bg-brand-primary"
           initial={false}
           transition={spring}
         />
@@ -74,7 +75,7 @@ function NavItem({
       </span>
       {horizontal && (
         <span
-          className="relative z-10 text-[0.625rem] font-semibold"
+          className="relative z-10 text-[0.625rem] font-bold"
           style={{ color: active ? "var(--on-accent)" : "var(--text-secondary)" }}
         >
           {label}
@@ -90,7 +91,6 @@ export default function NavMenu() {
 
   const resetSession = useSessionStore((s) => s.reset);
   const resetProgress = useProgressStore((s) => s.reset);
-
   const handleClick = (href: string) => {
     if (href === "#") return;
     if (href === ROUTES.HOME) {
@@ -104,7 +104,7 @@ export default function NavMenu() {
     <>
       {/* 데스크톱: 왼쪽 세로 중앙 */}
       <div className="fixed left-[max(1rem,calc((100vw-60rem)/2+1rem))] top-1/2 z-20 hidden -translate-y-1/2 md:block">
-        <div className="flex w-[11rem] flex-col gap-1 rounded-[1.25rem] border border-border-light bg-surface-glass-heavy p-2 shadow-[0_0.25rem_1.5rem_var(--shadow-nav)] backdrop-blur-xl">
+        <div className="flex w-[11rem] flex-col gap-1 rounded-[1.25rem] border border-border-light bg-surface-glass-heavy p-2 backdrop-blur-xl">
           {ITEMS.map(({ label, Icon, href }) => (
             <NavItem
               key={label}
@@ -120,7 +120,7 @@ export default function NavMenu() {
 
       {/* 태블릿/모바일: 하단 고정 */}
       <div className="fixed bottom-0 left-0 right-0 z-20 md:hidden">
-        <div className="flex items-stretch border-t border-border-light bg-surface-glass-heavy px-2 pb-safe pt-1 shadow-[0_-0.125rem_1rem_var(--shadow-card)] backdrop-blur-xl">
+        <div className="flex items-stretch border-t border-border-light bg-surface-glass-heavy px-2 pb-safe pt-1 backdrop-blur-xl">
           {ITEMS.map(({ label, Icon, href }) => (
             <NavItem
               key={label}

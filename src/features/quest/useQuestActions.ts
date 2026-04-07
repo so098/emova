@@ -5,6 +5,7 @@ import { useQuestStore, today, type QuestState } from "@/store/questStore";
 import { useRewardStore } from "@/store/rewardStore";
 import { useToast } from "@/components/ToastStack";
 import * as questApi from "@/lib/supabase/questApi";
+import * as xpLedgerApi from "@/lib/supabase/xpLedgerApi";
 import * as logic from "./questLogic";
 import { useInvalidateQuests } from "./useQuests";
 import type { MovaContext } from "./movaMessages";
@@ -83,11 +84,18 @@ export function useQuestActions(serverQuests?: QuestState) {
     })();
 
     const { addPoints, addXP } = useRewardStore.getState();
+    const ledgerType = toggled.source === "ai" ? "xp" as const : "points" as const;
     if (toggled.source === "ai") {
       addXP(toggled.points);
     } else {
       addPoints(toggled.points);
     }
+    xpLedgerApi.insertTransaction({
+      type: ledgerType,
+      delta: toggled.points,
+      reason: "퀘스트 완료",
+      questId: id,
+    }).catch((e) => console.error("Failed to record XP transaction:", e));
 
     const rewardType = toggled.source === "ai" ? "XP" : "포인트";
     showToast(`+${toggled.points} ${rewardType} 완료!`, "");
@@ -117,12 +125,32 @@ export function useQuestActions(serverQuests?: QuestState) {
   };
 
   const handleRestore = (id: string) => {
+    const quest = [...quests.단기, ...quests.장기].find((q) => q.id === id);
     setQuests((prev) => logic.restore(prev, id));
+
+    // 포인트 차감
+    if (quest) {
+      const { removePoints, removeXP } = useRewardStore.getState();
+      const ledgerType = quest.source === "ai" ? "xp" as const : "points" as const;
+      if (quest.source === "ai") {
+        removeXP(quest.points);
+      } else {
+        removePoints(quest.points);
+      }
+      xpLedgerApi.insertTransaction({
+        type: ledgerType,
+        delta: -quest.points,
+        reason: "퀘스트 복원",
+        questId: id,
+      }).catch((e) => console.error("Failed to record refund transaction:", e));
+
+      const rewardType = quest.source === "ai" ? "XP" : "포인트";
+      showToast(`-${quest.points} ${rewardType} 차감`, "복원되었습니다");
+    }
 
     (async () => {
       try {
         await questApi.updateQuestStatus(id, false);
-        const quest = [...quests.단기, ...quests.장기].find((q) => q.id === id);
         if (quest?.parentId) {
           await questApi.updateQuestStatus(quest.parentId, false);
         }
@@ -356,6 +384,20 @@ export function useQuestActions(serverQuests?: QuestState) {
     }
   };
 
+  const saveMemo = (id: string, memo: string) => {
+    setQuests((prev) => ({
+      ...prev,
+      단기: prev.단기.map((q) => (q.id === id ? { ...q, memo } : q)),
+      장기: prev.장기.map((q) => (q.id === id ? { ...q, memo } : q)),
+    }));
+    questApi.updateQuestMemo(id, memo)
+      .then(() => invalidateQuests())
+      .catch((e) => {
+        console.error("Failed to sync memo:", e);
+        showToast("메모 저장에 실패했어요", "");
+      });
+  };
+
   const restoreTarget = restoreTargetId
     ? ([...quests.단기, ...quests.장기].find((q) => q.id === restoreTargetId) ?? null)
     : null;
@@ -376,6 +418,7 @@ export function useQuestActions(serverQuests?: QuestState) {
     deleteTargetId, setDeleteTargetId, deleteHasChildren,
     tryDeleteQuest, deleteDetachChildren, deleteWithChildren,
     startEdit, addInlineQuest, commitInlineTitle,
+    saveMemo,
     handleRoutineSubmit,
     openMenu, closeMenu,
   };

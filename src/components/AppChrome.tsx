@@ -5,7 +5,8 @@ import NavMenu from "@/components/NavMenu";
 import BottomBar from "@/components/BottomBar";
 import UserHUD from "@/components/UserHUD";
 import NotificationBell from "@/components/NotificationBell";
-import EmotionGauge from "@/components/EmotionGauge";
+import ShopButton from "@/components/ShopButton";
+import CurrencyHUD from "@/components/CurrencyHUD";
 import {
   HIDE_NAV_ROUTES,
   HIDE_BOTTOM_BAR_ROUTES,
@@ -15,15 +16,12 @@ import SkipLink from "@/components/SkipLink";
 import ThemeToggle from "@/components/ThemeToggle";
 import SessionSidePanel from "@/features/home/SessionSidePanel";
 
-const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.LOADING, ROUTES.QUESTION, ROUTES.RECOMMEND];
+const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.QUESTION, ROUTES.RECOMMEND];
 
 export default function AppChrome() {
   const pathname = usePathname();
   const hideNav = HIDE_NAV_ROUTES.includes(pathname);
   const hideBottomBar = hideNav || HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
-  const hideAll = pathname === ROUTES.LOADING;
-
-  if (hideAll) return null;
 
   return (
     <>
@@ -32,12 +30,10 @@ export default function AppChrome() {
         <div className="shrink-0">
           <UserHUD />
         </div>
-        <h1 className="text-brand-logo absolute left-1/2 -translate-x-1/2 text-2xl font-bold">
-          emova
-        </h1>
         <div className="flex shrink-0 items-center gap-4">
+          <CurrencyHUD />
+          <ShopButton />
           <NotificationBell />
-          <EmotionGauge />
         </div>
       </header>
       {!hideNav && <NavMenu />}

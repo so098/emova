@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, SmilePlus, Minus, Frown, Sun } from "lucide-react";
+import { Sun } from "lucide-react";
+import { useToast } from "@/components/ToastStack";
+import { useInsertReflection, useUpdateReflection, useDeleteReflection } from "./useReflections";
+import ReflectEntryList from "./ReflectEntryList";
+import type { Reflection } from "@/lib/supabase/reflectionApi";
+import * as xpLedgerApi from "@/lib/supabase/xpLedgerApi";
+import { useRewardStore } from "@/store/rewardStore";
 
-const EMOTION_OPTIONS = [
-  { label: "좋아졌어", Icon: SmilePlus, color: "#3b82f6", value: "better" },
-  { label: "비슷해", Icon: Minus, color: "#10b981", value: "same" },
-  { label: "아직 힘들어", Icon: Frown, color: "#ef4444", value: "worse" },
-] as const;
+const EMOTION_LABELS = [
+  "불안", "무기력", "짜증", "혼란", "외로움",
+  "초조함", "의욕", "공허함", "설렘", "지침",
+];
 
-type EmotionValue = (typeof EMOTION_OPTIONS)[number]["value"];
-type WriteMode = null | "guided" | "free";
+type WriteMode = "guided" | "free";
+type Step = 0 | 1 | 2; // 0: 감정선택, 1: 방식선택, 2: 작성
 
 const GUIDED_QUESTIONS = [
   {
@@ -31,80 +37,130 @@ const GUIDED_QUESTIONS = [
   },
 ];
 
-interface ReflectEntry {
-  id: number;
-  date: string;
-  questTitle: string;
-  emotionBefore: string;
-  emotionAfter: EmotionValue;
-  text: string;
-  type: "guided" | "free";
-}
-
-const MOCK_ENTRIES: ReflectEntry[] = [
-  {
-    id: 1,
-    date: "2026.04.03",
-    questTitle: "따뜻한 물로 손 씻기",
-    emotionBefore: "불안",
-    emotionAfter: "better",
-    text: "별것 아닌 행동인데 하고 나니까 마음이 좀 가라앉았다. 손이 따뜻해지니까 긴장이 풀리는 느낌.",
-    type: "free",
-  },
-  {
-    id: 2,
-    date: "2026.04.02",
-    questTitle: "창문 열고 3번 심호흡",
-    emotionBefore: "무기력",
-    emotionAfter: "same",
-    text: "솔직히 크게 달라진 건 없는데, 그래도 밖 공기 마시니까 잠깐은 깨는 느낌이었다.",
-    type: "guided",
-  },
-];
-
 interface SummaryData {
   emotionBefore: string;
   emotionAfter: string;
-  questTitle: string;
   oneLiner: string;
   xp: number;
 }
 
-let nextId = 10;
+function EmotionPills({
+  label,
+  sub,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  sub?: string;
+  selected: string[];
+  onToggle: (emotion: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold text-text-primary">{label}</span>
+        {sub && <span className="text-xs text-text-faint">{sub}</span>}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {EMOTION_LABELS.map((emotion) => (
+          <button
+            key={emotion}
+            onClick={() => onToggle(emotion)}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
+              selected.includes(emotion)
+                ? "bg-interactive text-on-accent"
+                : "bg-surface-elevated text-text-muted"
+            }`}
+          >
+            {emotion}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ReflectPage() {
-  const [entries, setEntries] = useState(MOCK_ENTRIES);
-  const [writeMode, setWriteMode] = useState<WriteMode>(null);
-  const [selectedEmotion, setSelectedEmotion] = useState<EmotionValue | null>(
-    null,
-  );
+  const searchParams = useSearchParams();
+  const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
+  const scrollRef = useCallback((node: HTMLDivElement | null) => {
+    setScrollParent(node);
+  }, []);
+  const insertReflection = useInsertReflection();
+  const updateReflection = useUpdateReflection();
+  const deleteReflection = useDeleteReflection();
+  const { showToast } = useToast();
+
+  const [isWriting, setIsWriting] = useState(false);
+  const [step, setStep] = useState<Step>(0);
+  const [writeMode, setWriteMode] = useState<WriteMode | null>(null);
+  const [beforeEmotions, setBeforeEmotions] = useState<string[]>([]);
+  const [afterEmotions, setAfterEmotions] = useState<string[]>([]);
+  const [linkedQuestId, setLinkedQuestId] = useState<string | null>(null);
+  const [linkedQuestTitle, setLinkedQuestTitle] = useState<string | null>(null);
+  const [linkedQuestMemo, setLinkedQuestMemo] = useState<string | null>(null);
+  const [editingReflection, setEditingReflection] = useState<Reflection | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  // 퀘스트 완료 후 MoodCheckModal에서 넘어온 경우 또는 퀘스트에서 회고하러 가기
+  const hasInitRef = useRef(false);
+  useEffect(() => {
+    if (hasInitRef.current) return;
+    const write = searchParams.get("write");
+    const mood = searchParams.get("mood");
+    const questId = searchParams.get("questId");
+    const questTitle = searchParams.get("questTitle");
+    const questMemo = searchParams.get("questMemo");
+    if (write === "true") {
+      hasInitRef.current = true;
+      setIsWriting(true);
+      if (mood && EMOTION_LABELS.includes(mood)) {
+        setBeforeEmotions([mood]);
+      }
+      if (questId) {
+        setLinkedQuestId(questId);
+        setLinkedQuestTitle(questTitle ?? null);
+        setLinkedQuestMemo(questMemo ?? null);
+      }
+    }
+  }, [searchParams]);
   const [freeText, setFreeText] = useState("");
   const [guidedAnswers, setGuidedAnswers] = useState<string[]>(
     GUIDED_QUESTIONS.map(() => ""),
   );
   const [summary, setSummary] = useState<SummaryData | null>(null);
 
-  const isWriting = writeMode !== null;
+  const toggleEmotion = (list: string[], emotion: string) =>
+    list.includes(emotion) ? list.filter((e) => e !== emotion) : [...list, emotion];
 
   const resetForm = () => {
+    setIsWriting(false);
+    setStep(0);
     setWriteMode(null);
-    setSelectedEmotion(null);
+    setBeforeEmotions([]);
+    setAfterEmotions([]);
     setFreeText("");
     setGuidedAnswers(GUIDED_QUESTIONS.map(() => ""));
+    setLinkedQuestId(null);
+    setLinkedQuestTitle(null);
+    setLinkedQuestMemo(null);
+    setEditingReflection(null);
+  };
+
+  const canGoNext = () => {
+    if (step === 0) return afterEmotions.length > 0;
+    if (step === 1) return writeMode !== null;
+    return false;
   };
 
   const canSubmit = () => {
-    if (!selectedEmotion) return false;
     if (writeMode === "free") return freeText.trim().length > 0;
-    if (writeMode === "guided")
-      return guidedAnswers.some((a) => a.trim().length > 0);
+    if (writeMode === "guided") return guidedAnswers.some((a) => a.trim().length > 0);
     return false;
   };
 
   const handleSubmit = () => {
-    if (!canSubmit() || !selectedEmotion || !writeMode) return;
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, "0")}.${String(today.getDate()).padStart(2, "0")}`;
+    if (!canSubmit() || !writeMode) return;
 
     const text =
       writeMode === "free"
@@ -116,46 +172,96 @@ export default function ReflectPage() {
             .filter(Boolean)
             .join("\n\n");
 
-    const afterLabel = emotionLabel(selectedEmotion)?.label ?? "";
-
-    // 한 줄 요약: 첫 문장 또는 50자 컷
     const firstLine = text.split("\n").find((l) => l.trim()) ?? text;
-    const oneLiner =
-      firstLine.length > 50 ? firstLine.slice(0, 50) + "…" : firstLine;
+    const oneLiner = firstLine.length > 50 ? firstLine.slice(0, 50) + "…" : firstLine;
 
-    setEntries((prev) => [
+    if (editingReflection) {
+      updateReflection.mutate(
+        {
+          id: editingReflection.id,
+          beforeEmotion: beforeEmotions.join(", "),
+          afterEmotion: afterEmotions.join(", "),
+          notes: text,
+        },
+        {
+          onSuccess: () => {
+            showToast("회고가 수정되었어요", "");
+            resetForm();
+          },
+          onError: () => {
+            showToast("수정에 실패했어요", "다시 시도해주세요");
+          },
+        },
+      );
+      return;
+    }
+
+    insertReflection.mutate(
       {
-        id: nextId++,
-        date: dateStr,
-        questTitle: "오늘의 퀘스트",
-        emotionBefore: "—",
-        emotionAfter: selectedEmotion,
-        text,
-        type: writeMode,
+        questId: linkedQuestId ?? undefined,
+        beforeEmotion: beforeEmotions.join(", "),
+        afterEmotion: afterEmotions.join(", "),
+        notes: text,
       },
-      ...prev,
-    ]);
+      {
+        onSuccess: () => {
+          // XP 기록
+          useRewardStore.getState().addXP(20);
+          xpLedgerApi.insertTransaction({
+            type: "xp",
+            delta: 20,
+            reason: "회고 작성",
+          }).catch((e) => console.error("Failed to record reflection XP:", e));
 
-    setSummary({
-      emotionBefore: "—",
-      emotionAfter: afterLabel,
-      questTitle: "오늘의 퀘스트",
-      oneLiner,
-      xp: 20,
-    });
-
-    resetForm();
+          setSummary({
+            emotionBefore: beforeEmotions.join(", ") || "—",
+            emotionAfter: afterEmotions.join(", "),
+            oneLiner,
+            xp: 20,
+          });
+          resetForm();
+        },
+        onError: () => {
+          showToast("저장에 실패했어요", "다시 시도해주세요");
+        },
+      },
+    );
   };
 
   const updateGuidedAnswer = (index: number, value: string) => {
     setGuidedAnswers((prev) => prev.map((a, i) => (i === index ? value : a)));
   };
 
-  const emotionLabel = (value: EmotionValue) =>
-    EMOTION_OPTIONS.find((o) => o.value === value);
+  const startEdit = (entry: Reflection) => {
+    setEditingReflection(entry);
+    setBeforeEmotions(entry.beforeEmotion ? entry.beforeEmotion.split(", ").filter(Boolean) : []);
+    setAfterEmotions(entry.afterEmotion ? entry.afterEmotion.split(", ").filter(Boolean) : []);
+    setFreeText(entry.notes);
+    setWriteMode("free");
+    setStep(2);
+    setIsWriting(true);
+  };
+
+  const confirmDelete = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteReflection.mutate(deleteTarget, {
+      onSuccess: () => {
+        showToast("회고가 삭제되었어요", "");
+        setDeleteTarget(null);
+      },
+      onError: () => {
+        showToast("삭제에 실패했어요", "다시 시도해주세요");
+        setDeleteTarget(null);
+      },
+    });
+  };
 
   return (
-    <div className="flex h-[calc(100dvh-16rem)] w-full max-w-(--ui-content-width) flex-col gap-6">
+    <div className="flex h-[calc(100dvh-10rem)] w-full max-w-(--ui-content-width) flex-col gap-6">
       {/* 요약 오버레이 */}
       <AnimatePresence>
         {summary && (
@@ -172,55 +278,34 @@ export default function ReflectPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[26rem] -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_8px_32px_rgba(0,0,0,0.15)]"
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[26rem] -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface"
             >
-              {/* 상단 */}
-              <div className="flex flex-col items-center gap-2 bg-[linear-gradient(135deg,var(--brand-logo)_0%,var(--ui-button-primary)_100%)] px-6 pt-8 pb-6">
+              <div className="flex flex-col items-center gap-2 bg-brand-primary px-6 pt-8 pb-6">
                 <Sun size={32} strokeWidth={1.8} color="var(--on-accent)" />
-                <span className="text-lg font-bold text-on-accent">
-                  오늘 하루, 고생했어요
-                </span>
+                <span className="text-lg font-bold text-on-accent">오늘 하루, 고생했어요</span>
               </div>
-
               <div className="flex flex-col gap-5 px-6 pt-5 pb-6">
-                {/* 흐름 */}
                 <div className="flex items-center justify-center gap-2.5 text-sm">
-                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-[#777777]">
+                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-text-muted">
                     {summary.emotionBefore}
                   </span>
                   <span className="text-xs text-text-faint">→</span>
-                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-[#777777]">
-                    {summary.questTitle}
-                  </span>
-                  <span className="text-xs text-text-faint">→</span>
                   <span className="rounded-full bg-accent-green-bg px-3 py-1.5 font-medium text-accent-green-text">
-                    done
+                    {summary.emotionAfter}
                   </span>
                 </div>
-
-                {/* 한 줄 회고 */}
                 <p className="text-center text-sm leading-relaxed text-text-secondary">
                   &ldquo;{summary.oneLiner}&rdquo;
                 </p>
-
-                {/* 구분선 */}
                 <div className="h-px bg-surface-elevated" />
-
-                {/* XP */}
-                <div className="flex items-center justify-between rounded-[0.875rem] bg-[#fffaf3] px-4 py-3">
+                <div className="flex items-center justify-between rounded-[0.875rem] bg-accent-gold-bg-light px-4 py-3">
                   <span className="text-sm text-text-muted">경험치</span>
-                  <span className="text-sm font-bold text-accent-gold">
-                    +{summary.xp} XP
-                  </span>
+                  <span className="text-sm font-bold text-accent-gold">+{summary.xp} XP</span>
                 </div>
-
-                {/* 닫기 */}
-                <p className="text-center text-xs text-[#bbbbbb]">
-                  내일 또 봐요.
-                </p>
+                <p className="text-center text-xs text-text-subtle">내일 또 봐요.</p>
                 <button
                   onClick={() => setSummary(null)}
-                  className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
+                  className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-on-accent"
                 >
                   닫기
                 </button>
@@ -230,211 +315,258 @@ export default function ReflectPage() {
         )}
       </AnimatePresence>
 
+      {/* 삭제 확인 모달 */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteTarget(null)}
+              className="fixed inset-0 z-40 bg-black/30"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[22rem] -translate-y-1/2 flex-col gap-4 rounded-2xl border border-border-default bg-surface px-6 py-6"
+            >
+              <span className="text-sm font-bold text-text-primary">정말 삭제하시겠습니까?</span>
+              <p className="text-xs text-text-muted">삭제하면 되돌릴 수 없어요.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 rounded-full bg-surface-elevated py-2.5 text-sm font-medium text-text-muted"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteReflection.isPending}
+                  className="flex-1 rounded-full bg-accent-red py-2.5 text-sm font-bold text-white"
+                >
+                  {deleteReflection.isPending ? "삭제 중..." : "삭제"}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-text-primary">회고</h1>
+        <h1 className="text-lg font-bold text-text-primary">
+          {editingReflection ? "회고 수정" : "회고"}
+        </h1>
         {!isWriting && (
           <button
-            onClick={() => setWriteMode("guided")}
-            className="bg-brand-primary rounded-full px-4 py-2 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)]"
+            onClick={() => { setIsWriting(true); setStep(0); }}
+            className="bg-brand-primary rounded-full px-4 py-2 text-sm font-bold text-on-accent"
           >
             회고 쓰기
           </button>
         )}
       </div>
 
-      {/* 작성 폼 */}
-      <AnimatePresence>
-        {isWriting && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="flex flex-1 flex-col gap-5 overflow-y-auto rounded-2xl border border-border-card-glass bg-surface-card-glass px-5 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
-          >
-            {/* 모드 선택 탭 */}
-            <div className="flex gap-2 rounded-[0.75rem] bg-surface-elevated p-1">
-              <button
-                onClick={() => setWriteMode("guided")}
-                className={`flex-1 rounded-[0.625rem] py-2.5 text-sm font-semibold transition-all ${
-                  writeMode === "guided"
-                    ? "bg-surface text-text-primary shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                    : "text-text-muted"
-                }`}
-              >
-                질문으로 회고하기
-              </button>
-              <button
-                onClick={() => setWriteMode("free")}
-                className={`flex-1 rounded-[0.625rem] py-2.5 text-sm font-semibold transition-all ${
-                  writeMode === "free"
-                    ? "bg-surface text-text-primary shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                    : "text-text-muted"
-                }`}
-              >
-                자유롭게 작성하기
-              </button>
+      {/* 연동된 퀘스트 + 실행 메모 표시 */}
+      {isWriting && linkedQuestTitle && (
+        <div className="flex flex-col gap-1.5 rounded-xl bg-accent-gold-bg-light px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-muted">연동 퀘스트</span>
+            <span className="max-w-[16rem] truncate text-xs font-semibold text-interactive">
+              {linkedQuestTitle}
+            </span>
+          </div>
+          {linkedQuestMemo && (
+            <div className="flex flex-col gap-0.5 border-t border-accent-gold/20 pt-1.5">
+              <span className="text-[0.625rem] font-semibold text-text-faint">실행 전 다짐</span>
+              <p className="text-xs leading-relaxed text-text-muted">{linkedQuestMemo}</p>
             </div>
-
-            {/* 감정 변화 선택 */}
-            <div className="flex flex-col gap-2.5">
-              <span className="text-sm font-semibold text-text-primary">
-                퀘스트 후 기분이 어때요?
-              </span>
-              <div className="flex gap-2">
-                {EMOTION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setSelectedEmotion(opt.value)}
-                    className={`flex flex-1 flex-col items-center gap-1.5 rounded-[0.875rem] py-3 text-sm font-medium transition-all ${
-                      selectedEmotion === opt.value
-                        ? "bg-[#fff5e9] text-accent-gold shadow-[0_0_0_1.5px_#e8c97a]"
-                        : "bg-surface-elevated text-text-muted"
-                    }`}
-                  >
-                    <opt.Icon size={20} strokeWidth={1.8} color={opt.color} />
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 질문 가이드 모드 */}
-            <AnimatePresence mode="wait">
-              {writeMode === "guided" && (
-                <motion.div
-                  key="guided"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex flex-col gap-4"
-                >
-                  <p className="text-xs text-[#b5b5b5]">
-                    하나 이상 작성해주세요
-                  </p>
-                  {GUIDED_QUESTIONS.map((q, i) => (
-                    <div key={i} className="flex flex-col gap-1.5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold text-text-primary">
-                          {q.question}
-                        </span>
-                        <span className="text-xs text-[#b5b5b5]">{q.sub}</span>
-                      </div>
-                      <textarea
-                        value={guidedAnswers[i]}
-                        onChange={(e) => updateGuidedAnswer(i, e.target.value)}
-                        placeholder={q.placeholder}
-                        rows={2}
-                        className="resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-[#e8c97a]"
-                      />
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* 자유 작성 모드 */}
-              {writeMode === "free" && (
-                <motion.div
-                  key="free"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex flex-col gap-2"
-                >
-                  <span className="text-sm font-semibold text-text-primary">
-                    오늘을 돌아보며
-                  </span>
-                  <textarea
-                    value={freeText}
-                    onChange={(e) => setFreeText(e.target.value)}
-                    placeholder="느낀 점, 깨달은 것, 다음에 해보고 싶은 것..."
-                    rows={5}
-                    className="resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-[#e8c97a]"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 버튼 — 폼 바깥 하단 고정 */}
-      {isWriting && (
-        <div className="flex shrink-0 gap-2">
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit()}
-            className="bg-brand-primary flex-1 rounded-full py-3 text-sm font-bold text-on-accent shadow-[0_4px_12px_rgba(255,148,55,0.3)] transition-opacity disabled:opacity-40"
-          >
-            저장하기
-          </button>
-          <button
-            onClick={resetForm}
-            className="rounded-full bg-surface-elevated px-5 py-3 text-sm font-medium text-[#bbbbbb] transition-colors hover:text-text-muted"
-          >
-            취소
-          </button>
+          )}
         </div>
       )}
 
-      {/* 회고 목록 — 작성 중에는 숨김 */}
-      {!isWriting && (
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-          {entries.length === 0 && (
-            <div className="flex flex-1 items-center justify-center">
-              <span className="text-sm font-medium text-[#bbbbbb]">
-                아직 회고가 없어요
-              </span>
-            </div>
-          )}
+      {/* 스텝 폼 */}
+      {isWriting && (
+        <>
+          {/* 스텝 인디케이터 */}
+          <div className="flex items-center gap-2">
+            {[0, 1, 2].map((s) => (
+              <div
+                key={s}
+                className={`h-1 flex-1 rounded-full transition-colors ${
+                  s <= step ? "bg-point" : "bg-surface-elevated"
+                }`}
+              />
+            ))}
+          </div>
 
-          {entries.map((entry) => {
-            const after = emotionLabel(entry.emotionAfter);
-            return (
+          <AnimatePresence mode="wait">
+            {/* Step 0: 감정 선택 */}
+            {step === 0 && (
               <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex min-h-[7.5rem] flex-col gap-3 rounded-2xl border border-border-card-glass bg-surface-card-glass px-5 py-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] backdrop-blur-lg"
+                key="step-0"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-1 flex-col gap-6 overflow-y-auto rounded-2xl border border-border-default bg-surface-card-glass px-5 py-5 backdrop-blur-lg"
               >
-                {/* 상단: 날짜 + 감정 변화 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#b5b5b5]">{entry.date}</span>
-                    <span className="text-[#d9d9d9]">·</span>
-                    <span className="text-xs font-medium text-accent-gold">
-                      {entry.questTitle}
-                    </span>
-                  </div>
-                  {after && (
-                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 text-xs font-medium text-accent-gold">
-                      {after.label}
-                    </span>
-                  )}
-                </div>
-
-                {/* 감정 흐름 */}
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="rounded-full bg-surface-elevated px-2.5 py-1 font-medium text-text-muted">
-                    {entry.emotionBefore}
-                  </span>
-                  <ArrowRight size={16} strokeWidth={1.8} color="#d4d4d4" />
-                  {after && (
-                    <span className="rounded-full bg-[#fff5e9] px-2.5 py-1 font-medium text-accent-gold">
-                      {after.label}
-                    </span>
-                  )}
-                </div>
-
-                {/* 회고 텍스트 */}
-                <p className="text-sm leading-relaxed whitespace-pre-line text-text-secondary">
-                  {entry.text}
-                </p>
+                <EmotionPills
+                  label="퀘스트 전 기분은 어땠어요?"
+                  sub="여러 개 선택할 수 있어요 (선택사항)"
+                  selected={beforeEmotions}
+                  onToggle={(e) => setBeforeEmotions((prev) => toggleEmotion(prev, e))}
+                />
+                <EmotionPills
+                  label="퀘스트 후 기분이 어때요?"
+                  sub="최소 하나를 선택해주세요"
+                  selected={afterEmotions}
+                  onToggle={(e) => setAfterEmotions((prev) => toggleEmotion(prev, e))}
+                />
               </motion.div>
-            );
-          })}
+            )}
+
+            {/* Step 1: 방식 선택 */}
+            {step === 1 && (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-1 flex-col gap-4 overflow-y-auto rounded-2xl border border-border-default bg-surface-card-glass px-5 py-5 backdrop-blur-lg"
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold text-text-primary">어떤 방식으로 회고할까요?</span>
+                  <span className="text-xs text-text-faint">편한 방식을 선택해주세요</span>
+                </div>
+                <button
+                  onClick={() => setWriteMode("guided")}
+                  className={`flex flex-col gap-1.5 rounded-2xl px-5 py-4 text-left transition-all ${
+                    writeMode === "guided"
+                      ? "bg-accent-gold-bg ring-[1.5px] ring-[var(--interactive)]"
+                      : "bg-surface-elevated"
+                  }`}
+                >
+                  <span className="text-sm font-bold text-text-primary">질문으로 회고하기</span>
+                  <span className="text-xs text-text-muted">
+                    3가지 질문에 답하면서 오늘을 되돌아봐요. 뭘 써야 할지 모르겠을 때 추천.
+                  </span>
+                </button>
+                <button
+                  onClick={() => setWriteMode("free")}
+                  className={`flex flex-col gap-1.5 rounded-2xl px-5 py-4 text-left transition-all ${
+                    writeMode === "free"
+                      ? "bg-accent-gold-bg ring-[1.5px] ring-[var(--interactive)]"
+                      : "bg-surface-elevated"
+                  }`}
+                >
+                  <span className="text-sm font-bold text-text-primary">자유롭게 작성하기</span>
+                  <span className="text-xs text-text-muted">
+                    형식 없이 느낀 점, 깨달은 것, 다음에 해보고 싶은 것을 자유롭게 적어요.
+                  </span>
+                </button>
+              </motion.div>
+            )}
+
+            {/* Step 2: 작성 */}
+            {step === 2 && writeMode === "guided" && (
+              <motion.div
+                key="step-2-guided"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-1 flex-col gap-4 overflow-y-auto rounded-2xl border border-border-default bg-surface-card-glass px-5 py-5 backdrop-blur-lg"
+              >
+                <p className="text-xs text-text-faint">하나 이상 작성해주세요</p>
+                {GUIDED_QUESTIONS.map((q, i) => (
+                  <div key={i} className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold text-text-primary">{q.question}</span>
+                      <span className="text-xs text-text-subtle">{q.sub}</span>
+                    </div>
+                    <textarea
+                      value={guidedAnswers[i]}
+                      onChange={(e) => updateGuidedAnswer(i, e.target.value)}
+                      placeholder={q.placeholder}
+                      rows={2}
+                      className="resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-accent-gold"
+                    />
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {step === 2 && writeMode === "free" && (
+              <motion.div
+                key="step-2-free"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-1 flex-col gap-2 overflow-y-auto rounded-2xl border border-border-default bg-surface-card-glass px-5 py-5 backdrop-blur-lg"
+              >
+                <span className="text-sm font-semibold text-text-primary">오늘을 돌아보며</span>
+                <textarea
+                  value={freeText}
+                  onChange={(e) => setFreeText(e.target.value)}
+                  placeholder="느낀 점, 깨달은 것, 다음에 해보고 싶은 것..."
+                  rows={8}
+                  className="flex-1 resize-none rounded-[0.875rem] bg-surface-elevated px-4 py-3 text-sm leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-accent-gold"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 하단 버튼 */}
+          <div className="flex shrink-0 gap-2">
+            {step > 0 && (
+              <button
+                onClick={() => setStep((s) => (s - 1) as Step)}
+                className="rounded-full bg-surface-elevated px-5 py-3 text-sm font-medium text-text-muted transition-colors hover:text-text-primary"
+              >
+                이전
+              </button>
+            )}
+            {step < 2 ? (
+              <button
+                onClick={() => setStep((s) => (s + 1) as Step)}
+                disabled={!canGoNext()}
+                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-accent transition-opacity disabled:opacity-40"
+              >
+                다음
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={!canSubmit() || insertReflection.isPending || updateReflection.isPending}
+                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-accent transition-opacity disabled:opacity-40"
+              >
+                {(insertReflection.isPending || updateReflection.isPending)
+                  ? "저장 중..."
+                  : editingReflection ? "수정하기" : "저장하기"}
+              </button>
+            )}
+            {step === 0 && (
+              <button
+                onClick={resetForm}
+                className="rounded-full bg-surface-elevated px-5 py-3 text-sm font-medium text-text-subtle transition-colors hover:text-text-muted"
+              >
+                취소
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 회고 목록 */}
+      {!isWriting && (
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+          <ReflectEntryList scrollParent={scrollParent} onEdit={startEdit} onDelete={confirmDelete} />
         </div>
       )}
     </div>

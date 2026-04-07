@@ -1,6 +1,6 @@
 # Supabase API 연동 계획
 
-> 현재 상태: quests 테이블만 API 연동 완료. 나머지 10개 테이블 미연동.
+> 최종 업데이트: 2026-04-06
 
 ---
 
@@ -8,119 +8,154 @@
 
 | 테이블 | API 파일 | 연동 상태 |
 |---|---|---|
-| quests | questApi.ts | 완료 |
-| survey_sessions | - | 미구현 |
-| survey_emotions | - | 미구현 |
-| survey_thought | - | 미구현 |
-| reflections | - | 미구현 (ReflectPage 목 데이터 사용 중) |
-| xp_ledger | - | 미구현 (rewardStore 메모리만) |
-| survey_actions | - | 미구현 |
-| action_catalog | - | 미구현 |
-| suggestion_rules | - | 미구현 |
-| survey_desires | - | 미구현 |
+| quests | questApi.ts + useQuests.ts (React Query) | ✅ 완료 |
+| survey_sessions | movaFlowApi.ts | ✅ 완료 (createSession, completeSession, abortSession, fetchActiveSession) |
+| survey_thought | movaFlowApi.ts | ✅ 완료 (saveThought, startFlow에 포함) |
+| survey_emotions | movaFlowApi.ts | ✅ 완료 (saveEmotion) |
+| survey_desires | movaFlowApi.ts | ✅ 완료 (saveDesires, finishFlow에 포함) |
+| survey_actions | movaFlowApi.ts | ✅ 완료 (saveActions, finishFlow에 포함) |
+| reflections | reflectionApi.ts + useReflections.ts (React Query) | ✅ 완료 (fetchReflectionPage, insertReflection, fetchReflectionBySession) |
+| xp_ledger | xpLedgerApi.ts + useXPLedger.ts (React Query) | ✅ 완료 (insertTransaction, fetchTotals, fetchHistory) |
+| user_achievements | achievementApi.ts + useAchievements.ts (React Query) | ✅ 완료 (fetchUnlocked, unlockAchievement, fetchStreak) |
+| action_catalog | - | ❌ 미구현 (MVP 이후) |
+| suggestion_rules | - | ❌ 미구현 (MVP 이후) |
+
+### React Query 이관 상태
+
+| 영역 | 상태 |
+|---|---|
+| quests fetch | ✅ useQuests() — useQuery |
+| quests mutation | ✅ useQuestActions() — invalidateQuests 패턴 |
+| quests 추가 (추천→퀘스트) | ✅ useAddQuests() — useMutation |
+| flow 시작 (세션+생각) | ✅ useStartFlow() — useMutation |
+| flow 감정 저장 | ✅ useSaveEmotion() — useMutation |
+| flow 완료 (욕구+행동+세션종료) | ✅ useFinishFlow() — useMutation |
+| reflections fetch | ✅ useReflections() — useInfiniteQuery (페이지네이션) |
+| reflections mutation | ✅ useInsertReflection, useUpdateReflection, useDeleteReflection |
+| xp_ledger fetch | ✅ useTotals() — useQuery |
+| xp_ledger mutation | ✅ useInsertTransaction() — useMutation + invalidate totals |
+| achievements fetch | ✅ useUnlockedAchievements() — useQuery |
+| achievements mutation | ✅ useUnlockAchievement() — useMutation |
+| streak fetch | ✅ useStreak() — useQuery (quests.completed_at 기반 계산) |
 
 ---
 
-## 구현 순서
+## 완료된 구현
 
-### 1순위: 세션 API — `surveySessionApi.ts`
+### 1순위: 세션 API ✅
 
-세션이 모든 데이터의 묶음 단위. 이게 없으면 감정/생각/회고를 연결할 수 없음.
+**파일:** `src/lib/supabase/movaFlowApi.ts`
 
-**테이블:** `survey_sessions`
+| 함수 | 상태 | 연동 위치 |
+|---|---|---|
+| `createSession()` | ✅ | GridSection → startFlow |
+| `completeSession(id)` | ✅ | RecommendList → finishFlow |
+| `abortSession(id)` | ✅ | 구현됨, 호출처 미연결 |
+| `fetchActiveSession()` | ✅ | 구현됨, 호출처 미연결 |
 
-**함수:**
-- `createSession()` — 감정 선택 시 세션 생성 (status: in_progress)
-- `completeSession(id)` — 회고 완료 시 status → completed, completed_at 기록
-- `abortSession(id)` — 중도 이탈 시 status → aborted
-- `fetchActiveSession()` — 현재 진행 중인 세션 조회
+### 2순위: 감정·생각 API ✅
 
-**연동 위치:** 감정 선택 페이지에서 세션 시작, 회고 완료 시 세션 종료
+**파일:** `src/lib/supabase/movaFlowApi.ts` + `src/features/flow/useFlowMutations.ts`
 
----
+| 함수 | 상태 | 연동 위치 |
+|---|---|---|
+| `saveThought(sessionId, key, customText?)` | ✅ | GridSection → useStartFlow |
+| `saveEmotion(sessionId, key, intensity, customText?)` | ✅ | EmotionCardList → useSaveEmotion |
+| `fetchEmotionsBySession()` | ❌ | 조회 함수 미구현 (시각화 시 필요) |
+| `fetchEmotionHistory()` | ❌ | 조회 함수 미구현 (시각화 시 필요) |
 
-### 2순위: 감정·생각 API — `surveyEmotionApi.ts`, `surveyThoughtApi.ts`
+### 5순위 일부: survey_actions, survey_desires ✅
 
-시각화의 원천 데이터. 감정 강도(intensity)가 여기서 쌓여야 나중에 그래프를 그릴 수 있음.
-
-**테이블:** `survey_emotions`, `survey_thought`
-
-**감정 API 함수:**
-- `insertEmotion(sessionId, emotionKey, intensity, customText?)` — 감정 선택 저장
-- `fetchEmotionsBySession(sessionId)` — 세션별 감정 조회
-- `fetchEmotionHistory()` — 전체 감정 이력 (시각화용)
-
-**생각 API 함수:**
-- `insertThought(sessionId, thoughtKey, customText?)` — 생각 선택 저장
-- `fetchThoughtsBySession(sessionId)` — 세션별 생각 조회
-
-**연동 위치:**
-- 감정: `EmotionCardList` — 감정 선택 시 insert
-- 생각: `GridSection` — 그리드 선택 시 insert
+| 함수 | 상태 | 연동 위치 |
+|---|---|---|
+| `saveActions(sessionId, actions[])` | ✅ | RecommendList → useFinishFlow |
+| `saveDesires(sessionId, needNow, desiredAction)` | ✅ | RecommendList → useFinishFlow |
 
 ---
 
-### 3순위: 회고 API — `reflectionApi.ts`
+## 남은 구현
 
-감정 before/after 변화 기록. 현재 ReflectPage가 목 데이터(`MOCK_ENTRIES`)로 동작 중.
+### 3순위: 회고 API — `reflectionApi.ts` ✅
 
-**테이블:** `reflections`
+**파일:** `src/lib/supabase/reflectionApi.ts` + `src/features/reflect/useReflections.ts`
 
-**함수:**
-- `insertReflection(sessionId, questId, beforeEmotion, afterEmotion, notes)` — 회고 저장
-- `fetchReflections()` — 회고 목록 조회
-- `fetchReflectionBySession(sessionId)` — 세션별 회고 조회
+| 함수 | 상태 | 연동 위치 |
+|---|---|---|
+| `fetchReflectionPage(offset)` | ✅ | ReflectEntryList → useReflections (useInfiniteQuery) |
+| `fetchReflections()` | ✅ | 전체 조회 (레거시, 유지) |
+| `insertReflection(params)` | ✅ | ReflectPage → useInsertReflection |
+| `fetchReflectionBySession(sessionId)` | ✅ | 세션별 조회 |
 
-**연동 위치:** `ReflectPage` — 회고 작성 완료 시 insert, 목록 조회 시 fetch
+**구현 특이사항:**
+- `useInfiniteQuery`로 무한 스크롤 페이지네이션 (PAGE_SIZE=3)
+- `react-virtuoso` + `customScrollParent`로 가상화 리스트
+- 컴포넌트 분리: `ReflectEntryCard.tsx`, `ReflectEntryList.tsx`
 
 ---
 
-### 4순위: XP 원장 API — `xpLedgerApi.ts`
+### 4순위: XP 원장 API — `xpLedgerApi.ts` ✅
 
-현재 rewardStore가 메모리에서만 동작. 새로고침하면 XP 초기화됨.
+**파일:** `src/lib/supabase/xpLedgerApi.ts` + `src/features/reward/useXPLedger.ts`
 
-**테이블:** `xp_ledger`
+| 함수 | 상태 | 설명 |
+|---|---|---|
+| `insertTransaction(type, delta, reason, questId?, sessionId?)` | ✅ | XP 또는 포인트 변동 기록 |
+| `fetchTotals()` | ✅ | XP + 포인트 합계 한번에 조회 |
+| `fetchTotal(type)` | ✅ | 타입별 누적 합계 |
+| `fetchHistory(type?, limit?)` | ✅ | 변동 이력 (최신순) |
 
-**함수:**
-- `insertXPTransaction(delta, reason, questId?, sessionId?)` — XP 변동 기록
-- `fetchTotalXP()` — 누적 XP 합계 조회 (SUM)
-- `fetchXPHistory()` — XP 변동 이력 (선택)
+**연동:**
+- `RewardSync` 컴포넌트가 앱 마운트 시 `fetchTotals()` → `rewardStore.setTotals()` 동기화
+- `rewardStore`에 `loaded` 플래그 + `setTotals()` 추가
+- 퀘스트 완료 시 `useQuestActions`에서 insert (연동 예정)
+- 회고 완료 시 `ReflectPage`에서 insert (연동 예정)
 
-**연동 위치:**
-- 퀘스트 완료 시 `QuestPage`에서 insert
-- 회고 완료 시 `ReflectPage`에서 insert
-- `rewardStore` 초기화 시 fetchTotalXP로 DB에서 로드
+---
+
+### 4.5순위: 업적 API — `achievementApi.ts` ✅
+
+**파일:** `src/lib/supabase/achievementApi.ts` + `src/features/reward/useAchievements.ts`
+
+| 함수 | 상태 | 설명 |
+|---|---|---|
+| `fetchUnlocked()` | ✅ | 해금된 업적 목록 조회 |
+| `unlockAchievement(key)` | ✅ | 업적 해금 (upsert, 중복 방지) |
+| `fetchStreak()` | ✅ | quests.completed_at 기반 연속 기록 일수 계산 |
+
+**스트릭 계산 방식:**
+- 별도 테이블 없이 quests.completed_at에서 고유 날짜 추출
+- KST 기준으로 변환 후 오늘/어제부터 역순으로 연속일 카운트
+- 오늘·어제 모두 기록 없으면 streak = 0
 
 ---
 
 ### 5순위: 나머지 (MVP 이후)
 
-**survey_actions API** — 추천 행동 선택/완료 기록
-- `insertAction(sessionId, actionId, source, customText?)`
-- `markActionCompleted(id)`
-- 연동: `RecommendList`
-
 **action_catalog API** — 행동 카탈로그 마스터 데이터 조회
 - `fetchActions(tags?, difficulty?)`
-- 연동: 추천 시스템 fallback
+- 연동: 추천 시스템 fallback (하이브리드 추천 전환 시)
 
 **suggestion_rules API** — 감정+생각 → 행동 추천 규칙
 - `fetchRules(emotionKey, thoughtKey)`
-- 연동: 추천 로직
+- 연동: DB 기반 추천 로직
 
-**survey_desires API** — 욕구/니즈 기록
-- `insertDesires(sessionId, needNow, endOfDayFeel, desiredAction)`
-- 연동: 설문 플로우 확장 시
+**감정 조회 API** — 시각화용
+- `fetchEmotionsBySession(sessionId)` — 세션별 감정 조회
+- `fetchEmotionHistory()` — 전체 감정 이력 (그래프용)
 
 ---
 
 ## 전제 조건
 
-- [ ] OAuth 로그인 구현 (RLS가 auth.uid() 기반이라 로그인 없이 데이터 저장 불가)
+- [ ] OAuth 로그인 구현 (현재 익명 인증으로 동작, RLS는 auth.uid() 기반)
 
 ## 완료 후 가능해지는 것
 
+- [x] ~~세션 단위로 감정→생각→행동 데이터 연결~~ (완료)
+- [x] ~~새로고침해도 퀘스트 유지~~ (React Query로 해결)
 - [ ] 감정 변화 시각화 (감정 강도 데이터 기반 그래프)
-- [ ] 사용자별 데이터 격리 (로그인 + RLS)
-- [ ] 새로고침해도 XP/포인트 유지
-- [ ] 회고 이력 열람
+- [ ] 사용자별 데이터 격리 (OAuth + RLS)
+- [x] ~~새로고침해도 XP/포인트 유지~~ (xp_ledger + RewardSync 완료)
+- [x] ~~회고 이력 열람~~ (reflections 연동 + 무한 스크롤 완료)
+- [x] ~~업적 해금 기록 영속화~~ (user_achievements 테이블 + API 완료)
+- [x] ~~연속 기록 스트릭 계산~~ (quests.completed_at 기반 fetchStreak 완료)

@@ -19,6 +19,7 @@ interface MenuActions {
   hold: (id: string) => void;
   resume: (id: string) => void;
   delete: (id: string) => void;
+  goToReflect: (id: string) => void;
 }
 
 interface QuestContextMenuProps {

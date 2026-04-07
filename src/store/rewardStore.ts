@@ -5,15 +5,23 @@ const XP_PER_LEVEL = 100;
 interface RewardState {
   points: number;
   xp: number;
+  loaded: boolean;
+  setTotals: (xp: number, points: number) => void;
   addPoints: (amount: number) => void;
   addXP: (amount: number) => void;
+  removePoints: (amount: number) => void;
+  removeXP: (amount: number) => void;
 }
 
 export const useRewardStore = create<RewardState>((set) => ({
   points: 0,
   xp: 0,
+  loaded: false,
+  setTotals: (xp, points) => set({ xp, points, loaded: true }),
   addPoints: (amount) => set((s) => ({ points: s.points + amount })),
   addXP: (amount) => set((s) => ({ xp: s.xp + amount })),
+  removePoints: (amount) => set((s) => ({ points: Math.max(0, s.points - amount) })),
+  removeXP: (amount) => set((s) => ({ xp: Math.max(0, s.xp - amount) })),
 }));
 
 /** XP에서 레벨 계산 */
