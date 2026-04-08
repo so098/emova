@@ -125,14 +125,12 @@ export default function Onboarding() {
       setActive(false);
       localStorage.setItem(STORAGE_KEY, "true");
     } else {
-      console.log("여기실행?");
       setStepIndex((i) => i + 1);
     }
   };
 
   if (!active || !rect || steps.length === 0) return null;
   const current = steps[stepIndex];
-  console.log("current", current, stepIndex);
   const padding = 8;
   const isLast = stepIndex >= steps.length - 1;
   const tooltipStyle = calcTooltipStyle(current.position, rect, padding);
