@@ -1,8 +1,4 @@
 import { Suspense } from "react";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import getQueryClient from "@/lib/query/getQueryClient";
-import { QUEST_KEY } from "@/lib/query/queryKeys";
-import { prefetchQuests } from "@/lib/supabase/serverQueries";
 import QuestPage from "@/features/quest/components/QuestPage";
 
 function QuestSkeleton() {
@@ -20,21 +16,12 @@ function QuestSkeleton() {
   );
 }
 
-export default async function QuestRoute() {
-  const queryClient = getQueryClient();
-
-  await queryClient.prefetchQuery({
-    queryKey: QUEST_KEY,
-    queryFn: prefetchQuests,
-  });
-
+export default function QuestRoute() {
   return (
     <main className="flex flex-1 items-start justify-center px-4 pt-7 pb-8">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Suspense fallback={<QuestSkeleton />}>
-          <QuestPage />
-        </Suspense>
-      </HydrationBoundary>
+      <Suspense fallback={<QuestSkeleton />}>
+        <QuestPage />
+      </Suspense>
     </main>
   );
 }
