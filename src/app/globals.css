@@ -41,6 +41,7 @@
 
   /* 포인트 컬러 (게이지 등 강조) */
   --point-color: #ff9437;
+  --on-point: #ffffff;
 
   /* 액센트 — 라이트에서 컬러, 다크에서 그레이 */
   --accent-gold: #e08a3a;
@@ -123,6 +124,7 @@
   --interactive-light: #2a2a2a; /* :root #f0f0f0 */
   --interactive-hover: #d4d4d4; /* :root #3a3a3a */
   --on-accent: #e0e0e0; /* :root #ffffff */
+  --on-point: #2a2a2a; /* 포인트 배경 위 어두운 텍스트 */
 
   /* ── 보더 · 그림자 ── */
   --border-default: #2a2a2a; /* :root #e5e5e5 */
@@ -185,6 +187,7 @@
   --color-border-light: var(--border-light);
 
   --color-point: var(--point-color);
+  --color-on-point: var(--on-point);
   --color-interactive: var(--interactive);
   --color-interactive-light: var(--interactive-light);
   --color-interactive-hover: var(--interactive-hover);
