@@ -2,9 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as achievementApi from "@/lib/supabase/achievementApi";
-
-const ACHIEVEMENTS_KEY = ["achievements"] as const;
-const STREAK_KEY = ["streak"] as const;
+import { ACHIEVEMENTS_KEY, STREAK_KEY } from "@/lib/query/queryKeys";
 
 /** 해금된 업적 조회 */
 export function useUnlockedAchievements() {
