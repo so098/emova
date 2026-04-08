@@ -19,11 +19,11 @@
 
 | 영역 | 기술 | 왜 이걸 선택했나 |
 |------|------|------|
-| 프레임워크 | Next.js 16 (App Router) / React 19 | Server Action으로 AI API 키를 클라이언트에 노출하지 않기 위해 |
+| 프레임워크 | Next.js 16 (App Router) / React 19 | layout·error·middleware 등 파일 컨벤션으로 라우팅·에러·인증을 선언적으로 처리하고, Server Action/Component로 API 키 노출 없이 서버 로직 호출 |
 | 스타일링 | Tailwind CSS v4 + CSS 변수 | 디자인 토큰을 한 곳에서 관리하면서 다크모드 전환도 변수 스위칭으로 해결 |
 | 애니메이션 | Framer Motion | spring physics 기반 자연스러운 전환. 외부 UI 라이브러리 없이 직접 구현 |
 | 상태관리 | Zustand | Redux 대비 보일러플레이트가 적고, 셀렉터 패턴으로 불필요한 리렌더 방지 |
-| 백엔드 | Supabase (Auth + DB) | 익명 인증 → OAuth 전환이 같은 uid로 유지돼서 마이그레이션 부담 없음 |
+| 백엔드 | Supabase (Auth + DB) | 별도 서버 구축 없이 인증·DB·RLS를 즉시 사용해 빠른 MVP 개발. 익명 인증 → OAuth 전환 시 같은 uid 유지 |
 | AI | Claude API (Server Action) | 감정+답변 맥락을 넘겨 일반적 조언이 아닌 구체적 행동을 생성 |
 | 테스트 | Vitest | 순수 로직을 분리해서 60개 유닛 테스트로 리팩토링 안전망 확보 |
 
