@@ -42,3 +42,8 @@ next-env.d.ts
 .mcp.json
 .claude/
 .vscode/
+
+# docs (internal only)
+docs/bugs/
+docs/review/
+docs/todo.md
