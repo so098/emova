@@ -440,7 +440,7 @@ describe("복합 시나리오", () => {
   });
 
   it("단기 완료 → undo → 장기 미완료 유지", () => {
-    let state = makeState({
+    const state = makeState({
       단기: [
         { id: "1", title: "A", date: "2026.04.03", points: 10, done: true, parentId: "10" },
         { id: "2", title: "B", date: "2026.04.03", points: 10, done: false, parentId: "10" },
@@ -460,7 +460,7 @@ describe("복합 시나리오", () => {
   });
 
   it("복수 장기 퀘스트: 하나만 완료되고 다른 것은 영향 없음", () => {
-    let state: QuestState = {
+    const state: QuestState = {
       단기: [
         { id: "1", title: "A", date: "2026.04.03", points: 10, done: true, parentId: "10" },
         { id: "2", title: "B", date: "2026.04.03", points: 10, done: false, parentId: "10" },
