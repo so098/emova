@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { reflectSession } from "./movaFlowApi";
 
 /* ── 인증 헬퍼 ── */
 
@@ -126,6 +127,22 @@ export async function insertReflection(params: {
     .single();
 
   if (error) throw error;
+
+  // 플로우 완주 판정: questId로부터 session_id를 찾아 reflected 처리
+  const sessionId = params.sessionId;
+  if (!sessionId && params.questId) {
+    const { data: quest } = await supabase
+      .from("quests")
+      .select("session_id")
+      .eq("id", params.questId)
+      .maybeSingle();
+    if (quest?.session_id) {
+      await reflectSession(quest.session_id);
+    }
+  } else if (sessionId) {
+    await reflectSession(sessionId);
+  }
+
   return fromDbRow(data as DbReflection);
 }
 

@@ -1,5 +1,7 @@
 import { createClient } from "./client";
 
+export type SessionStatus = "in_progress" | "completed" | "reflected" | "aborted";
+
 /* ── 인증 헬퍼 ── */
 
 async function getClientId(): Promise<string> {
@@ -19,7 +21,7 @@ export async function createSession(): Promise<string> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("survey_sessions")
-    .insert({ client_id: clientId, status: "in_progress" })
+    .insert({ client_id: clientId, status: "in_progress" as SessionStatus })
     .select("id")
     .single();
   if (error) throw error;
@@ -106,7 +108,7 @@ export async function completeSession(sessionId: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase
     .from("survey_sessions")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({ status: "completed" as SessionStatus, completed_at: new Date().toISOString() })
     .eq("id", sessionId);
   if (error) throw error;
 }
@@ -116,7 +118,17 @@ export async function abortSession(sessionId: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase
     .from("survey_sessions")
-    .update({ status: "aborted", aborted_at: new Date().toISOString() })
+    .update({ status: "aborted" as SessionStatus, aborted_at: new Date().toISOString() })
+    .eq("id", sessionId);
+  if (error) throw error;
+}
+
+/** 세션 회고 완료 */
+export async function reflectSession(sessionId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("survey_sessions")
+    .update({ status: "reflected" as SessionStatus })
     .eq("id", sessionId);
   if (error) throw error;
 }

@@ -76,54 +76,6 @@ export async function unlockAchievement(
     : null;
 }
 
-/* ── 스트릭 계산 (quests.completed_at 기반) ── */
+/* ── 스트릭 계산 (xp_ledger 기반 — 퀘스트 완료 + 회고 모두 포함) ── */
 
-/** 연속 기록 일수 계산 */
-export async function fetchStreak(): Promise<number> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("quests")
-    .select("completed_at")
-    .eq("status", "done")
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false });
-
-  if (error) throw error;
-  if (!data || data.length === 0) return 0;
-
-  // 완료 날짜를 고유 일자로 변환 (KST 기준)
-  const uniqueDays = new Set<string>();
-  for (const row of data as { completed_at: string }[]) {
-    const d = new Date(row.completed_at);
-    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-    uniqueDays.add(kst.toISOString().slice(0, 10));
-  }
-
-  const sorted = [...uniqueDays].sort().reverse();
-
-  // 오늘 또는 어제부터 시작하여 연속 일수 계산
-  const today = new Date();
-  const kstToday = new Date(today.getTime() + 9 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
-  const yesterday = new Date(today.getTime() + 9 * 60 * 60 * 1000 - 86400000)
-    .toISOString()
-    .slice(0, 10);
-
-  if (sorted[0] !== kstToday && sorted[0] !== yesterday) return 0;
-
-  let streak = 1;
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]);
-    const curr = new Date(sorted[i]);
-    const diff = (prev.getTime() - curr.getTime()) / 86400000;
-    if (diff === 1) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
-}
+export { fetchStreakFromLedger as fetchStreak } from "@/lib/rewardBalancing";

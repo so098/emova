@@ -34,7 +34,7 @@ function fromDbRow(row: DbQuestRow): Quest {
     done: row.status === "done",
     memo: row.description ?? undefined,
     parentId: row.parent_id ?? undefined,
-    originTab: row.category === "보류" ? undefined : undefined,
+    originTab: row.origin_category as Quest["originTab"],
     source: row.source as Quest["source"],
   };
 }
@@ -106,6 +106,7 @@ export async function insertQuest(
 export async function insertQuests(
   quests: Omit<Quest, "id">[],
   category: "단기" | "장기",
+  sessionId?: string,
 ): Promise<Quest[]> {
   if (quests.length === 0) return [];
   const clientId = await getClientId();
@@ -119,6 +120,7 @@ export async function insertQuests(
     xp_reward: q.points,
     parent_id: q.parentId ?? null,
     category,
+    session_id: sessionId ?? null,
   }));
 
   const { data, error } = await supabase
