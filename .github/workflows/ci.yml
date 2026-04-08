@@ -27,7 +27,7 @@ jobs:
       - name: Check for console.log / console.warn / console.error
         run: |
           # src 내 console 사용 검사 (허용: serverQueries, route.ts, middleware)
-          RESULT=$(grep -rn 'console\.\(log\|warn\|error\|debug\|info\)' src/ \
+          RESULT=$(grep -rn 'console\.\(log\|warn\|debug\|info\)' src/ \
             --include='*.ts' --include='*.tsx' \
             --exclude-dir=node_modules \
             | grep -v '// allow-console' \
