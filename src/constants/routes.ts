@@ -7,6 +7,7 @@ export const ROUTES = {
   REFLECT: "/reflect",
   PROFILE: "/profile",
   SHOP: "/shop",
+  DASHBOARD: "/dashboard",
 } as const;
 
 /** progressStore 진행 플로우 순서 */
@@ -17,7 +18,7 @@ export const PROGRESS_FLOW: string[] = [
 ];
 
 /** NavMenu / BottomBar를 숨길 경로 */
-export const HIDE_NAV_ROUTES: string[] = [ROUTES.RECOMMEND];
+export const HIDE_NAV_ROUTES: string[] = [ROUTES.DASHBOARD];
 
 /** BottomBar만 숨길 경로 */
-export const HIDE_BOTTOM_BAR_ROUTES: string[] = [ROUTES.QUEST, ROUTES.REFLECT, ROUTES.PROFILE, ROUTES.SHOP];
+export const HIDE_BOTTOM_BAR_ROUTES: string[] = [ROUTES.QUEST, ROUTES.REFLECT, ROUTES.PROFILE, ROUTES.SHOP, ROUTES.RECOMMEND];
