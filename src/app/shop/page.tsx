@@ -1,7 +1,4 @@
-"use client";
-
 import { Diamond, Lock, Palette, UserCircle, Award, SmilePlus, Zap } from "lucide-react";
-import { useRewardStore } from "@/store/rewardStore";
 
 type Currency = "points" | "xp" | "both";
 
@@ -79,26 +76,11 @@ function CostBadge({ cost, currency }: { cost: ShopItem["cost"]; currency: Curre
 const CATEGORIES = ["전체", "테마", "아바타", "뱃지", "모바 스킨"];
 
 export default function ShopPage() {
-  const points = useRewardStore((s) => s.points);
-  const xp = useRewardStore((s) => s.xp);
-
   return (
     <main className="flex min-h-dvh items-start justify-center px-4 pt-7 pb-8">
       <div className="flex w-full max-w-(--ui-content-width) flex-col gap-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-text-primary">상점</h1>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-full bg-bg-muted px-3 py-1.5">
-              <Diamond size={13} strokeWidth={2} color="var(--point-color)" />
-              <span className="text-xs font-bold text-text-primary">{points.toLocaleString()}P</span>
-            </div>
-            <div className="flex items-center gap-1 rounded-full bg-bg-muted px-3 py-1.5">
-              <Zap size={13} strokeWidth={2} color="var(--point-color)" />
-              <span className="text-xs font-bold text-text-primary">{xp} XP</span>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-lg font-bold text-text-primary">상점</h1>
 
         {/* 준비중 배너 */}
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-point/30 bg-bg-muted px-6 py-6">
