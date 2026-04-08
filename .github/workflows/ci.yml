@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  no-console:
+    name: No console statements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for console.log / console.warn / console.error
+        run: |
+          # src 내 console 사용 검사 (허용: serverQueries, route.ts, middleware)
+          RESULT=$(grep -rn 'console\.\(log\|warn\|error\|debug\|info\)' src/ \
+            --include='*.ts' --include='*.tsx' \
+            --exclude-dir=node_modules \
+            | grep -v '// allow-console' \
+            | grep -v 'serverQueries\.ts' \
+            | grep -v 'route\.ts' \
+            | grep -v 'middleware\.ts' \
+            || true)
+
+          if [ -n "$RESULT" ]; then
+            echo "::error::console 문 발견 — 제거하거나 '// allow-console' 주석을 추가하세요"
+            echo "$RESULT"
+            exit 1
+          fi
+
+          echo "console 문 없음 ✓"
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
