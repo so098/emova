@@ -4,6 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useProgressStore } from "@/store/progressStore";
 import { useSessionStore } from "@/store/sessionStore";
 import { ROUTES } from "@/constants/routes";
+import { useSaveEmotion } from "@/features/flow/useFlowMutations";
 
 const TOTAL = 4;
 
@@ -12,13 +13,20 @@ export default function BottomBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { filled, next, advance } = useProgressStore();
-  const { questionLabel, questionText } = useSessionStore();
+  const { questionLabel, questionText, selectedEmotion, supabaseSessionId } = useSessionStore();
+  const saveEmotion = useSaveEmotion();
 
+  const isEmotionPage = pathname === ROUTES.EMOTION;
   const isQuestionDetail = pathname.startsWith(ROUTES.QUESTION) && pathname !== ROUTES.QUESTION;
   const buttonLabel = isQuestionDetail ? "다 작성했어요" : "다 골랐어요";
 
   const handleClick = () => {
     const params = new URLSearchParams(searchParams.toString());
+
+    // 감정 페이지 → DB 저장
+    if (isEmotionPage && supabaseSessionId && selectedEmotion) {
+      saveEmotion.mutate({ sessionId: supabaseSessionId, key: selectedEmotion });
+    }
 
     if (isQuestionDetail) {
       advance();
@@ -41,7 +49,7 @@ export default function BottomBar() {
           <div
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-500"
-            style={{ background: i < filled ? "var(--brand-logo)" : "var(--border-default)" }}
+            style={{ background: i < filled ? "var(--point-color)" : "var(--border-default)" }}
           />
         ))}
       </div>
@@ -49,7 +57,7 @@ export default function BottomBar() {
       {/* 버튼 */}
       <button
         onClick={handleClick}
-        className="h-[2.875rem] w-full rounded-xl bg-brand-primary text-sm font-semibold text-on-accent transition-opacity hover:opacity-85"
+        className="h-[2.875rem] w-full rounded-xl bg-point text-sm font-semibold text-on-point transition-opacity hover:opacity-85"
       >
         {buttonLabel}
       </button>

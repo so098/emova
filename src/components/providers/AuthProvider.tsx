@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRemoveQuestCache } from "@/features/quest/useQuests";
+import { useRemoveQuestCache } from "@/features/quest/hooks/useQuests";
 
 export default function AuthProvider({
   children,

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import SectionTitle from "@/components/SectionTitle";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { ROUTES } from "@/constants/routes";
 import { Waves, CloudDrizzle, Flame, Shuffle, Moon, Zap, Sprout, Circle, Sparkles, BatteryLow } from "lucide-react";
 import type { ElementType } from "react";
@@ -51,13 +51,9 @@ export default function EmotionCardList() {
 
   const handleCardClick = (globalIndex: number) => {
     if (selected === globalIndex) {
-      // 더블클릭 → 다음 페이지로 이동 + DB 저장
-      if (supabaseSessionId) {
-        saveEmotion.mutate({ sessionId: supabaseSessionId, key: ITEMS[globalIndex].label });
-      }
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("emotion", ITEMS[globalIndex].label);
-      router.push(`${ROUTES.QUESTION}?${params.toString()}`);
+      setSelected(null);
+      setEmotionStore("");
+      updateEmotion("");
     } else {
       setSelected(globalIndex);
       setEmotionStore(ITEMS[globalIndex].label);
@@ -79,7 +75,7 @@ export default function EmotionCardList() {
   const pageItems = ITEMS.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="flex w-full max-w-(--ui-content-width) flex-col gap-4">
+    <div data-onboarding="emotion-grid" className="flex w-full max-w-(--ui-content-width) flex-col gap-4">
       <SectionTitle>지금 느끼는 감정을 골라보세요</SectionTitle>
 
       {/* 카드 슬라이드 영역 */}
@@ -151,6 +147,7 @@ export default function EmotionCardList() {
           />
         ))}
       </div>
+
     </div>
   );
 }

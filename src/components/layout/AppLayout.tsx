@@ -1,41 +1,28 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import NavMenu from "@/components/NavMenu";
-import BottomBar from "@/components/BottomBar";
-import UserHUD from "@/components/UserHUD";
-import NotificationBell from "@/components/NotificationBell";
-import ShopButton from "@/components/ShopButton";
-import CurrencyHUD from "@/components/CurrencyHUD";
+import HeaderBar from "@/components/layout/HeaderBar";
+import NavMenu from "@/components/layout/NavMenu";
+import BottomBar from "@/components/layout/BottomBar";
 import {
   HIDE_NAV_ROUTES,
   HIDE_BOTTOM_BAR_ROUTES,
   ROUTES,
 } from "@/constants/routes";
-import SkipLink from "@/components/SkipLink";
-import ThemeToggle from "@/components/ThemeToggle";
+import SkipLink from "@/components/nav/SkipLink";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import SessionSidePanel from "@/features/home/SessionSidePanel";
 
 const MOVA_ROUTES = [ROUTES.HOME, ROUTES.EMOTION, ROUTES.QUESTION, ROUTES.RECOMMEND];
 
-export default function AppChrome() {
+export default function AppLayout() {
   const pathname = usePathname();
   const hideNav = HIDE_NAV_ROUTES.includes(pathname);
   const hideBottomBar = hideNav || HIDE_BOTTOM_BAR_ROUTES.includes(pathname);
 
   return (
     <>
-      {/* 헤더 — 고정 높이, 콘텐츠 밀어내기 */}
-      <header className="sticky top-0 z-30 mx-auto flex h-(--ui-header-height) w-full max-w-[60rem] shrink-0 items-center justify-between px-6">
-        <div className="shrink-0">
-          <UserHUD />
-        </div>
-        <div className="flex shrink-0 items-center gap-4">
-          <CurrencyHUD />
-          <ShopButton />
-          <NotificationBell />
-        </div>
-      </header>
+      {!hideNav && <HeaderBar />}
       {!hideNav && <NavMenu />}
       {!hideBottomBar && <BottomBar />}
       {pathname.startsWith(ROUTES.QUESTION) && (

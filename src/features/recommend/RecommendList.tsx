@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { fetchRecommendations, type Recommendation } from "@/app/recommend/actions";
 import { ROUTES } from "@/constants/routes";
-import CelebrationToast from "@/components/CelebrationToast";
+import CelebrationToast from "@/components/feedback/CelebrationToast";
 import { today } from "@/store/questStore";
 import { useSessionStore } from "@/store/sessionStore";
-import { useToast } from "@/components/ToastStack";
-import { useAddQuests } from "@/features/quest/useQuests";
+import { useToast } from "@/components/feedback/ToastStack";
+import { useAddQuests } from "@/features/quest/hooks/useQuests";
 import { useFinishFlow } from "@/features/flow/useFlowMutations";
 
 interface RecommendListProps {
@@ -62,7 +62,7 @@ export default function RecommendList({
         : []),
     ];
     if (newQuests.length > 0) {
-      addQuestsMutation.mutate({ quests: newQuests, category: "단기" });
+      addQuestsMutation.mutate({ quests: newQuests, category: "단기", sessionId: supabaseSessionId ?? undefined });
     }
 
     // DB 저장: desires + actions + 세션 완료
@@ -119,18 +119,18 @@ export default function RecommendList({
         duration={3000}
       />
 
-      <div className="flex w-full max-w-[26rem] flex-col gap-4">
-        {/* 타이틀 */}
-        <p className="text-base font-bold leading-snug text-text-primary">
+      <div className="flex h-[calc(100dvh-10rem)] w-full max-w-[26rem] flex-col gap-4">
+        {/* 타이틀 (고정) */}
+        <p className="shrink-0 text-base font-bold leading-snug text-text-primary">
           이 감정을 행동으로 바꾸는 건 쉽지 않지만 괜찮아요, 작게 시작해볼 수 있어요
           <span className="ml-1 text-sm font-normal text-text-muted">(중복 선택 가능)</span>
         </p>
 
-        {/* 추천 목록 */}
-        <div className="flex flex-col gap-2">
+        {/* 추천 목록 (스크롤) */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
           {isPending
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-[4.5rem] animate-pulse rounded-2xl bg-surface-elevated" />
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-[4.5rem] shrink-0 animate-pulse rounded-2xl bg-surface-elevated" />
               ))
             : items.map((item, i) => (
                 <motion.div
@@ -139,7 +139,7 @@ export default function RecommendList({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08 }}
                   onClick={() => handleSelect(i)}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg transition-colors"
+                  className="flex shrink-0 cursor-pointer items-center gap-3 rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg transition-colors"
                   style={{
                     border: selected.includes(i) ? "1px solid var(--ui-button-primary)" : "1px solid rgba(255,255,255,0.5)",
                   }}
@@ -161,7 +161,7 @@ export default function RecommendList({
           {/* 직접 입력 */}
           <div
             onClick={() => setCustomOpen((v) => !v)}
-            className="flex cursor-pointer items-center justify-center rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+            className="flex shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
             style={{ border: customOpen ? "1px solid var(--ui-button-primary)" : "1px solid transparent" }}
           >
             <span className="text-sm text-text-muted">직접 입력하기</span>
@@ -173,27 +173,20 @@ export default function RecommendList({
               onChange={(e) => setCustomValue(e.target.value)}
               placeholder="직접 적어보세요"
               autoFocus
-              className="rounded-xl border border-border-default bg-surface px-4 py-3 text-sm outline-none placeholder:text-text-faint focus:border-brand-primary"
+              className="shrink-0 rounded-xl border border-border-default bg-surface px-4 py-3 text-sm outline-none placeholder:text-text-faint focus:border-brand-primary"
             />
           )}
+
+
         </div>
 
-        {/* 다시 추천받기 */}
-        <button
-          onClick={handleRetry}
-          disabled={isPending}
-          className="self-center rounded-full border border-border-default bg-surface px-5 py-2 text-sm text-text-secondary transition-colors hover:border-brand-primary hover:text-brand-primary disabled:opacity-50"
-        >
-          다시 추천받기
-        </button>
-
-        {/* 하단 버튼 */}
-        <div className="flex gap-3">
+        {/* 하단 버튼 (고정) */}
+        <div className="flex shrink-0 gap-3">
           <button
             onClick={() => router.push(ROUTES.HOME)}
             className="flex-1 rounded-xl border border-border-default bg-surface py-3 text-sm text-text-secondary transition-colors hover:border-brand-primary"
           >
-            오늘은 그냥 넘어갈게요
+            오늘은 이만 넘어갈게요
           </button>
           <button
             onClick={handleDone}

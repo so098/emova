@@ -3,18 +3,38 @@
 import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import SectionTitle from "@/components/SectionTitle";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { HelpCircle, Snail, Ban, Sprout, Zap, PenLine } from "lucide-react";
 import type { ElementType } from "react";
 import { useSessionStore } from "@/store/sessionStore";
-import { useToast } from "@/components/ToastStack";
+import { useToast } from "@/components/feedback/ToastStack";
 import { useStartFlow } from "@/features/flow/useFlowMutations";
 
-const ITEMS: { key: string; label: string; color: string; Icon: ElementType }[] = [
-  { key: "unknown", label: "뭘 원하는지\n모르겠다", color: "#4894ff", Icon: HelpCircle },
-  { key: "procrastinate", label: "자꾸\n미루게 된다", color: "#ffa900", Icon: Snail },
+const ITEMS: {
+  key: string;
+  label: string;
+  color: string;
+  Icon: ElementType;
+}[] = [
+  {
+    key: "unknown",
+    label: "뭘 원하는지\n모르겠다",
+    color: "#4894ff",
+    Icon: HelpCircle,
+  },
+  {
+    key: "procrastinate",
+    label: "자꾸\n미루게 된다",
+    color: "#ffa900",
+    Icon: Snail,
+  },
   { key: "apathy", label: "아무 것도\n하기 싫다", color: "#656565", Icon: Ban },
-  { key: "remotive", label: "다시 잘해보고 싶다", color: "#00ff77", Icon: Sprout },
+  {
+    key: "remotive",
+    label: "다시 잘해보고 싶다",
+    color: "#00ff77",
+    Icon: Sprout,
+  },
   { key: "stimulate", label: "자극이\n필요하다", color: "#ff7400", Icon: Zap },
   { key: "custom", label: "직접\n입력하기", color: "#7e9cb9", Icon: PenLine },
 ];
@@ -38,7 +58,8 @@ export default function GridSection() {
       { thoughtKey, customText },
       {
         onSuccess: (sessionId) => setSupabaseSessionId(sessionId),
-        onError: () => showToast("저장에 실패했어요", "잠시 후 다시 시도해주세요"),
+        onError: () =>
+          showToast("저장에 실패했어요", "잠시 후 다시 시도해주세요"),
       },
     );
   };
@@ -57,7 +78,7 @@ export default function GridSection() {
     <div className="flex flex-col items-center gap-3">
       <SectionTitle>요즘 자주 드는 생각을 골라보세요</SectionTitle>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4" data-onboarding="thought-grid">
         {ITEMS.map(({ label, color, Icon }, i) => (
           <motion.div
             key={i}
@@ -82,8 +103,13 @@ export default function GridSection() {
             }}
             whileTap={{ scale: 0.91 }}
             transition={{ type: "spring", stiffness: 500, damping: 18 }}
-            className="flex h-[10rem] w-[10rem] cursor-pointer flex-col items-center justify-center gap-2 whitespace-pre-line rounded-xl bg-surface-glass text-center text-sm font-medium leading-snug text-text-primary shadow-[0_0.25rem_0.75rem_var(--shadow-card)] backdrop-blur-lg"
-            style={{ border: selected === i ? `1px solid ${color}` : "1px solid rgba(255,255,255,0.5)" }}
+            className="bg-surface-glass text-text-primary flex h-[10rem] w-[10rem] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl text-center text-sm leading-snug font-medium whitespace-pre-line shadow-[0_0.25rem_0.75rem_var(--shadow-card)] backdrop-blur-lg"
+            style={{
+              border:
+                selected === i
+                  ? `1px solid ${color}`
+                  : "1px solid rgba(255,255,255,0.5)",
+            }}
           >
             <div
               className="flex h-[3.0625rem] w-[3.0625rem] shrink-0 items-center justify-center rounded-full"
@@ -114,7 +140,7 @@ export default function GridSection() {
             }}
             placeholder="직접 입력해주세요"
             autoFocus
-            className="flex-1 rounded-xl border border-border-default bg-transparent px-4 py-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-faint focus:border-brand-logo"
+            className="border-border-default text-text-primary placeholder:text-text-faint focus:border-brand-logo flex-1 rounded-xl border bg-transparent px-4 py-3 text-sm transition-colors outline-none"
           />
           <button
             type="button"
@@ -128,7 +154,7 @@ export default function GridSection() {
               updateThought(val);
               saveToDb("custom", val);
             }}
-            className="shrink-0 rounded-xl bg-[var(--ui-button-primary)] px-4 py-3 text-sm font-medium text-on-accent transition-opacity disabled:opacity-40"
+            className="text-on-accent shrink-0 rounded-xl bg-[var(--ui-button-primary)] px-4 py-3 text-sm font-medium transition-opacity disabled:opacity-40"
           >
             확인
           </button>

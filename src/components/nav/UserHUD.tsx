@@ -9,7 +9,7 @@ export default function UserHUD() {
   const progress = getLevelProgress(xp);
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div data-onboarding="user-hud" className="flex items-center gap-2.5">
       {/* 아바타 */}
       <div className="relative shrink-0">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-point p-[2px]">

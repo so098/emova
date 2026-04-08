@@ -2,11 +2,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import AppChrome from "@/components/AppChrome";
-import AuthProvider from "@/components/AuthProvider";
-import QueryProvider from "@/components/QueryProvider";
-import { ToastProvider } from "@/components/ToastStack";
+import AppLayout from "@/components/layout/AppLayout";
+import AuthProvider from "@/components/providers/AuthProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
+import { ToastProvider } from "@/components/feedback/ToastStack";
 import RewardSync from "@/features/reward/RewardSync";
+import Onboarding from "@/components/ui/Onboarding";
 
 const pretendard = localFont({
   src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -36,7 +37,7 @@ export default function RootLayout({
           <div className="relative z-10 mx-auto flex min-h-dvh flex-col">
             {/* 고정 UI — 페이지 전환 시 유지 */}
             <Suspense>
-              <AppChrome />
+              <AppLayout />
             </Suspense>
 
             {/* 페이지별 콘텐츠 — 헤더 아래 남은 공간 채움 */}
@@ -45,6 +46,7 @@ export default function RootLayout({
             </Suspense>
           </div>
         </ToastProvider>
+        <Onboarding />
         </AuthProvider>
         </QueryProvider>
       </body>

@@ -2,15 +2,15 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Smile, Zap, BookOpen, User } from "lucide-react";
+import { Smile, Sword, BookOpen, User } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { useSessionStore } from "@/store/sessionStore";
 import { useProgressStore } from "@/store/progressStore";
-import ThemeToggle from "@/components/ThemeToggle";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const ITEMS = [
   { label: "모바",   Icon: Smile,    href: ROUTES.HOME },
-  { label: "퀘스트", Icon: Zap,      href: ROUTES.QUEST },
+  { label: "퀘스트", Icon: Sword,    href: ROUTES.QUEST },
   { label: "회고",   Icon: BookOpen, href: ROUTES.REFLECT },
   { label: "내 정보", Icon: User,    href: ROUTES.PROFILE },
 ];
@@ -103,7 +103,7 @@ export default function NavMenu() {
   return (
     <>
       {/* 데스크톱: 왼쪽 세로 중앙 */}
-      <div className="fixed left-[max(1rem,calc((100vw-60rem)/2+1rem))] top-1/2 z-20 hidden -translate-y-1/2 md:block">
+      <div data-onboarding="nav-menu" className="fixed left-[max(1rem,calc((100vw-60rem)/2+1rem))] top-1/2 z-20 hidden -translate-y-1/2 md:block">
         <div className="flex w-[11rem] flex-col gap-1 rounded-[1.25rem] border border-border-light bg-surface-glass-heavy p-2 backdrop-blur-xl">
           {ITEMS.map(({ label, Icon, href }) => (
             <NavItem
@@ -119,7 +119,7 @@ export default function NavMenu() {
       </div>
 
       {/* 태블릿/모바일: 하단 고정 */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 md:hidden">
+      <div data-onboarding="nav-menu-mobile" className="fixed bottom-0 left-0 right-0 z-20 md:hidden">
         <div className="flex items-stretch border-t border-border-light bg-surface-glass-heavy px-2 pb-safe pt-1 backdrop-blur-xl">
           {ITEMS.map(({ label, Icon, href }) => (
             <NavItem

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import SectionTitle from "@/components/SectionTitle";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { QUESTIONS } from "@/constants/questions";
 import { encodeQuestionSlug } from "@/utils/questionSlug";
 

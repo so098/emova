@@ -1,4 +1,4 @@
-import PageMain from "@/components/PageMain";
+import PageMain from "@/components/layout/PageMain";
 import RecommendList from "@/features/recommend/RecommendList";
 import { fetchRecommendations } from "@/app/recommend/actions";
 
