@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import RoutineModal from "@/features/quest/RoutineModal";
-import MoodCheckModal from "@/features/quest/MoodCheckModal";
-import QuestSidePanel from "@/features/quest/QuestSidePanel";
-import QuestCard from "@/features/quest/QuestCard";
-import { ConvertToShortModal, RestoreModal, DeleteQuestModal } from "@/features/quest/QuestConfirmModals";
-import { useToast } from "@/components/ToastStack";
-import { sortByDone } from "./questLogic";
-import { useQuestActions } from "./useQuestActions";
-import { useQuests } from "./useQuests";
+import RoutineModal from "./RoutineModal";
+import MoodCheckModal from "./MoodCheckModal";
+import QuestSidePanel from "./QuestSidePanel";
+import QuestCard from "./QuestCard";
+import { ConvertToShortModal, RestoreModal, DeleteQuestModal } from "./QuestConfirmModals";
+import { useToast } from "@/components/feedback/ToastStack";
+import { sortByDone } from "../lib/questLogic";
+import { useQuestActions } from "../hooks/useQuestActions";
+import { useQuests } from "../hooks/useQuests";
 
 type Tab = "단기" | "장기" | "보류";
 const TABS: Tab[] = ["단기", "장기", "보류"];
@@ -28,7 +28,7 @@ export default function QuestPage() {
   const [showDoneOnly, setShowDoneOnly] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const { data: serverQuests, isLoading, error } = useQuests();
+  const { data: serverQuests } = useQuests();
   const { showToast } = useToast();
 
   const {
@@ -50,13 +50,9 @@ export default function QuestPage() {
     saveMemo,
     handleRoutineSubmit,
     openMenu, closeMenu,
-  } = useQuestActions(serverQuests ?? undefined);
+  } = useQuestActions(serverQuests);
 
   useEffect(() => { setMounted(true); }, []);
-
-  useEffect(() => {
-    if (error) showToast("퀘스트를 불러오지 못했어요", "새로고침 후 다시 시도해주세요");
-  }, [error, showToast]);
 
   const hasShownNewQuestToast = useRef(false);
   useEffect(() => {
@@ -68,22 +64,6 @@ export default function QuestPage() {
 
   const allItems = sortByDone(quests[activeTab]);
   const items = showDoneOnly ? allItems.filter((q) => q.done) : allItems;
-
-  if (isLoading && !serverQuests)
-    return (
-      <div className="relative flex min-h-[80vh] w-full items-start justify-center gap-6 px-6 pt-10">
-        <div className="flex w-full max-w-[34rem] flex-col gap-4">
-          <div className="flex gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-surface-elevated h-[2.25rem] w-[4.5rem] animate-pulse rounded-full" />
-            ))}
-          </div>
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-surface-elevated h-[4rem] animate-pulse rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
 
   return (
     <>
@@ -128,7 +108,7 @@ export default function QuestPage() {
               return (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => { setActiveTab(tab); setShowDoneOnly(false); }}
                   className={`relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
                     isActive ? "" : "border-border-default hover:border-text-faint border"
                   }`}
@@ -177,12 +157,12 @@ export default function QuestPage() {
             {items.length === 0 && (
               <div className="flex flex-1 flex-col items-center justify-center gap-3">
                 <span className="text-sm font-medium text-text-subtle">
-                  {showDoneOnly ? "완료된 퀘스트가 없어요" : `${activeTab} 퀘스트가 없어요`}
+                  {showDoneOnly ? "완료된 퀘스트가 없어요" : activeTab === "보류" ? "보류된 퀘스트가 없어요" : `${activeTab} 퀘스트가 없어요`}
                 </span>
                 {!showDoneOnly && (activeTab === "단기" || activeTab === "장기") && (
                   <button
                     onClick={() => addInlineQuest(activeTab)}
-                    className="bg-point text-on-accent rounded-full px-5 py-2.5 text-sm font-bold"
+                    className="bg-point text-on-point rounded-full px-5 py-2.5 text-sm font-bold"
                   >
                     생성하기
                   </button>
@@ -228,7 +208,7 @@ export default function QuestPage() {
           {allItems.length > 0 && (activeTab === "단기" || activeTab === "장기") && (
             <button
               onClick={() => addInlineQuest(activeTab)}
-              className="bg-point text-on-accent shrink-0 rounded-full py-3 text-sm font-bold"
+              className="bg-point text-on-point shrink-0 rounded-full py-3 text-sm font-bold"
             >
               + 퀘스트 추가
             </button>

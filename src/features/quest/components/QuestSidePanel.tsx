@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getMovaMessage, type MovaContext } from "./movaMessages";
+import { getMovaMessage, type MovaContext } from "../lib/movaMessages";
+import { useStreak } from "@/features/reward/useAchievements";
 
 interface Quest {
   id: string;
@@ -47,8 +48,7 @@ export default function QuestSidePanel({ 단기, 장기, movaContext }: QuestSid
     단기.filter((q) => q.done).reduce((s, q) => s + q.points, 0) +
     장기.filter((q) => q.done).reduce((s, q) => s + q.points, 0);
 
-  // 임시 streak (추후 실제 데이터 연동)
-  const streakDays = 1;
+  const { data: streakDays = 0 } = useStreak();
 
   const motivation = getMotivation(doneShort + doneLong, totalShort + totalLong, streakDays);
 

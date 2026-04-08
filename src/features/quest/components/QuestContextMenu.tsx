@@ -9,6 +9,7 @@ import {
   Play,
   Trash2,
   ArrowRightLeft,
+  BookOpen,
 } from "lucide-react";
 
 interface MenuActions {
@@ -59,13 +60,22 @@ export default function QuestContextMenu({
           </button>
         )}
         {done && activeTab !== "보류" && (
-          <button
-            onClick={() => actions.restore(questId)}
-            className="text-brand-primary flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium hover:bg-[#fff8f0]"
-          >
-            <RotateCcw size={15} strokeWidth={1.5} />
-            돌려놓기
-          </button>
+          <>
+            <button
+              onClick={() => actions.goToReflect(questId)}
+              className="flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium text-[#333333] hover:bg-[#f5f5f5]"
+            >
+              <BookOpen size={15} strokeWidth={1.5} color="#555" />
+              회고 쓰러가기
+            </button>
+            <button
+              onClick={() => actions.restore(questId)}
+              className="text-brand-primary flex items-center gap-2.5 rounded-[0.625rem] px-3 py-2.5 text-left text-[0.8125rem] font-medium hover:bg-[#fff8f0]"
+            >
+              <RotateCcw size={15} strokeWidth={1.5} />
+              돌려놓기
+            </button>
+          </>
         )}
         {activeTab === "단기" && !done && (
           <button

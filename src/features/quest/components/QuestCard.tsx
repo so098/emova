@@ -62,7 +62,6 @@ export default function QuestCard({
   const [memoOpen, setMemoOpen] = useState(false);
   const [memoText, setMemoText] = useState(quest.memo ?? "");
 
-  console.log("isTitleExpanded", isTitleExpanded);
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
@@ -80,10 +79,9 @@ export default function QuestCard({
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: quest.done ? 0.55 : 1, y: 0 }}
-      className={clsx(
-        "bg-surface-card-glass border-border-default flex h-auto flex-col rounded-2xl border px-5 py-4 backdrop-blur-lg",
-        !isTitleExpanded ? "min-h-[7.5rem]" : "",
-      )}
+      className={
+        "bg-surface-card-glass border-border-default flex h-auto flex-col rounded-2xl border px-5 py-4 backdrop-blur-lg"
+      }
     >
       {/* 상단: 메타 + 메뉴 */}
       <div className="mb-3 flex items-center justify-between">
@@ -96,11 +94,11 @@ export default function QuestCard({
               <span className="text-border-default">·</span>
             </>
           )}
-          <span className="text-xs text-text-subtle">{quest.date}</span>
+          <span className="text-text-subtle text-xs">{quest.date}</span>
           {activeTab === "보류" && quest.originTab && (
             <>
               <span className="text-border-default">·</span>
-              <span className="text-xs font-medium text-text-subtle">
+              <span className="text-text-subtle text-xs font-medium">
                 {quest.originTab}에서 보류됨
               </span>
             </>
@@ -154,10 +152,10 @@ export default function QuestCard({
             transition={{ duration: 0.3 }}
             className="mt-[0.1875rem] h-[1.625rem] w-[1.625rem] shrink-0 rounded-full border-[2px] transition-colors"
             style={{
-              borderColor: quest.done ? "var(--interactive)" : "var(--text-faint)",
-              background: quest.done
+              borderColor: quest.done
                 ? "var(--interactive)"
-                : "transparent",
+                : "var(--text-faint)",
+              background: quest.done ? "var(--interactive)" : "transparent",
             }}
           >
             {quest.done && (
@@ -218,7 +216,9 @@ export default function QuestCard({
           }`}
         >
           {quest.source === "ai" ? (
-            <><Zap size={12} strokeWidth={2} /> {quest.points} XP</>
+            <>
+              <Zap size={12} strokeWidth={2} /> {quest.points} XP
+            </>
           ) : (
             <>
               <Diamond size={12} strokeWidth={2} />
@@ -248,11 +248,11 @@ export default function QuestCard({
 
       {/* 실행 메모 (미완료 단기 퀘스트) */}
       {activeTab === "단기" && !quest.done && editing.id !== quest.id && (
-        <div className="mt-2 border-t border-bg-muted pt-2">
+        <div className="border-bg-muted mt-2 border-t pt-2">
           {!memoOpen && !quest.memo && (
             <button
               onClick={() => setMemoOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-text-faint transition-colors hover:text-text-muted"
+              className="text-text-faint hover:text-text-muted flex items-center gap-1.5 text-xs font-medium transition-colors"
             >
               <PenLine size={12} strokeWidth={1.5} />
               다짐 메모 쓰기
@@ -261,33 +261,45 @@ export default function QuestCard({
           {!memoOpen && quest.memo && (
             <button
               onClick={() => setMemoOpen(true)}
-              className="flex w-full flex-col gap-1 text-left"
+              className="bg-accent-gold-bg-light flex w-full flex-col gap-0.5 rounded-xl px-4 py-2.5 text-left"
             >
-              <span className="text-[0.625rem] font-semibold text-text-faint">다짐 메모</span>
-              <p className="line-clamp-2 text-xs leading-relaxed text-text-muted">{quest.memo}</p>
+              <span className="text-text-faint text-[0.625rem] font-semibold">
+                실행 전 다짐
+              </span>
+              <p className="text-text-muted text-xs leading-relaxed whitespace-pre-wrap">
+                {quest.memo}
+              </p>
             </button>
           )}
           {memoOpen && (
-            <div className="flex flex-col gap-2">
-              <span className="text-[0.625rem] font-semibold text-text-faint">다짐 메모</span>
+            <div className="bg-accent-gold-bg-light flex flex-col gap-2 rounded-xl px-4 py-2.5">
+              <span className="text-text-faint text-[0.625rem] font-semibold">
+                실행 전 다짐
+              </span>
               <textarea
                 value={memoText}
                 onChange={(e) => setMemoText(e.target.value)}
                 placeholder="실행 전 다짐이나 생각을 적어보세요"
                 rows={2}
                 autoFocus
-                className="resize-none rounded-xl bg-surface-elevated px-3 py-2 text-xs leading-relaxed text-text-primary outline-none placeholder:text-text-faint focus:ring-1 focus:ring-accent-gold"
+                className="bg-surface-elevated text-text-primary placeholder:text-text-faint focus:ring-accent-gold resize-none rounded-xl px-3 py-2 text-xs leading-relaxed outline-none focus:ring-1"
               />
               <div className="flex justify-end gap-1.5">
                 <button
-                  onClick={() => { setMemoOpen(false); setMemoText(quest.memo ?? ""); }}
-                  className="rounded-full px-3 py-1 text-xs font-medium text-text-muted hover:text-text-primary"
+                  onClick={() => {
+                    setMemoOpen(false);
+                    setMemoText(quest.memo ?? "");
+                  }}
+                  className="text-text-muted hover:text-text-primary rounded-full px-3 py-1 text-xs font-medium"
                 >
                   취소
                 </button>
                 <button
-                  onClick={() => { actions.saveMemo(quest.id, memoText.trim()); setMemoOpen(false); }}
-                  className="rounded-full bg-point px-3 py-1 text-xs font-bold text-on-accent"
+                  onClick={() => {
+                    actions.saveMemo(quest.id, memoText.trim());
+                    setMemoOpen(false);
+                  }}
+                  className="bg-point text-on-point rounded-full px-3 py-1 text-xs font-bold"
                 >
                   저장
                 </button>
@@ -299,9 +311,13 @@ export default function QuestCard({
 
       {/* 완료된 퀘스트의 메모 (읽기 전용) */}
       {quest.done && quest.memo && (
-        <div className="mt-2 border-t border-bg-muted pt-2">
-          <span className="text-[0.625rem] font-semibold text-text-faint">다짐 메모</span>
-          <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{quest.memo}</p>
+        <div className="bg-accent-gold-bg-light mt-2 flex flex-col gap-0.5 rounded-xl px-4 py-2.5">
+          <span className="text-text-faint text-[0.625rem] font-semibold">
+            실행 전 다짐
+          </span>
+          <p className="text-text-muted text-xs leading-relaxed">
+            {quest.memo}
+          </p>
         </div>
       )}
 
@@ -314,10 +330,10 @@ export default function QuestCard({
           const doneCount = children.filter((q) => q.done).length;
           const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
           return (
-            <div className="mt-3 flex flex-col gap-2.5 border-t border-bg-muted pt-3">
+            <div className="border-bg-muted mt-3 flex flex-col gap-2.5 border-t pt-3">
               {total > 0 && (
                 <div className="flex items-center gap-3">
-                  <div className="h-[0.3125rem] flex-1 overflow-hidden rounded-full bg-bg-muted">
+                  <div className="bg-bg-muted h-[0.3125rem] flex-1 overflow-hidden rounded-full">
                     <motion.div
                       className="bg-point h-full rounded-full"
                       initial={{ width: 0 }}
@@ -336,7 +352,7 @@ export default function QuestCard({
               )}
               <button
                 onClick={() => actions.openRoutine(quest.id)}
-                className="hover:text-accent-gold text-left text-sm font-medium text-text-subtle transition-colors"
+                className="hover:text-accent-gold text-text-subtle text-left text-sm font-medium transition-colors"
               >
                 + 오늘의 작은 실천 추가
               </button>
@@ -345,12 +361,13 @@ export default function QuestCard({
         })()}
 
       {/* 보류 탭: 연결된 단기 퀘스트 버튼 */}
-      {activeTab === "보류" && quest.originTab === "장기" &&
+      {activeTab === "보류" &&
+        quest.originTab === "장기" &&
         quests.단기.filter((q) => q.parentId === quest.id).length > 0 && (
           <div className="mt-2.5">
             <button
               onClick={() => actions.openRoutine(quest.id)}
-              className="rounded-full border border-border-default bg-bg-muted px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:text-text-primary"
+              className="border-border-default bg-bg-muted text-text-secondary hover:text-text-primary rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors"
             >
               연결된 단기 퀘스트 확인
             </button>

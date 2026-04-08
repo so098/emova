@@ -60,27 +60,28 @@ function fill(template: string, stats: QuestStats): string {
     .replace("{longDone}", String(stats.longDone));
 }
 
-function pick(pool: string[]): string {
-  return pool[Math.floor(Math.random() * pool.length)];
+function pick(pool: string[], seed: number): string {
+  return pool[((seed % pool.length) + pool.length) % pool.length];
 }
 
 export function getMovaMessage(context: MovaContext, stats: QuestStats): string {
+  const seed = stats.shortTotal * 7 + stats.shortDone * 13 + stats.longTotal * 3 + stats.longDone * 11;
   switch (context) {
     case "empty":
-      return pick(EMPTY);
+      return pick(EMPTY, seed);
     case "allDone":
-      return pick(ALL_DONE);
+      return pick(ALL_DONE, seed);
     case "longTermDone":
-      return pick(LONG_TERM_DONE);
+      return pick(LONG_TERM_DONE, seed);
     case "questDone": {
       const remain = stats.shortTotal - stats.shortDone;
-      return remain <= 0 ? pick(QUEST_DONE_LAST) : fill(pick(QUEST_DONE), stats);
+      return remain <= 0 ? pick(QUEST_DONE_LAST, seed) : fill(pick(QUEST_DONE, seed), stats);
     }
     case "idle":
     default: {
-      if (stats.shortDone === 0 && stats.shortTotal > 0) return pick(IDLE_ZERO);
-      if (stats.shortTotal === 0) return pick(EMPTY);
-      return fill(pick(IDLE), stats);
+      if (stats.shortDone === 0 && stats.shortTotal > 0) return pick(IDLE_ZERO, seed);
+      if (stats.shortTotal === 0) return pick(EMPTY, seed);
+      return fill(pick(IDLE, seed), stats);
     }
   }
 }
