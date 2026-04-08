@@ -1,22 +1,7 @@
 import { createClient } from "./client";
-import type { Quest, QuestState } from "@/store/questStore";
-
-/* ── DB row 타입 ── */
-interface DbQuestRow {
-  id: string;
-  client_id: string;
-  title: string;
-  description: string | null;
-  source: string;
-  status: string;
-  due_at: string | null;
-  xp_reward: number;
-  created_at: string;
-  completed_at: string | null;
-  parent_id: string | null;
-  category: string;
-  origin_category: string | null;
-}
+import { authError, dbError } from "@/lib/errors";
+import type { Quest, QuestState } from "@/types/quest";
+import type { DbQuestRow } from "@/types/db/quest";
 
 /* ── 매핑 헬퍼 ── */
 
@@ -46,7 +31,7 @@ async function getClientId(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
@@ -59,7 +44,7 @@ export async function fetchQuests(): Promise<QuestState> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) throw dbError(error);
 
   const rows = (data ?? []) as DbQuestRow[];
   const state: QuestState = { 단기: [], 장기: [], 보류: [] };
@@ -99,7 +84,7 @@ export async function insertQuest(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return fromDbRow(data as DbQuestRow);
 }
 
@@ -128,7 +113,7 @@ export async function insertQuests(
     .insert(rows)
     .select();
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return (data as DbQuestRow[]).map(fromDbRow);
 }
 
@@ -144,7 +129,7 @@ export async function updateQuestStatus(
       completed_at: done ? new Date().toISOString() : null,
     })
     .eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 export async function updateQuestCategory(
@@ -163,7 +148,7 @@ export async function updateQuestCategory(
     .from("quests")
     .update(updates)
     .eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 export async function updateQuestTitle(
@@ -175,7 +160,7 @@ export async function updateQuestTitle(
     .from("quests")
     .update({ title })
     .eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 실��� 메모 저장 */
@@ -188,7 +173,7 @@ export async function updateQuestMemo(
     .from("quests")
     .update({ description: memo })
     .eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 export async function updateQuestFields(
@@ -203,7 +188,7 @@ export async function updateQuestFields(
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("quests").update(fields).eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 export async function deleteQuest(id: string): Promise<void> {
@@ -216,5 +201,5 @@ export async function deleteQuest(id: string): Promise<void> {
     .eq("parent_id", id);
 
   const { error } = await supabase.from("quests").delete().eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }

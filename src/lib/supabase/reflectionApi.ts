@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { authError, dbError } from "@/lib/errors";
 import { reflectSession } from "./movaFlowApi";
 
 /* ── 인증 헬퍼 ── */
@@ -8,35 +9,15 @@ async function getClientId(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
 /* ── 타입 ── */
 
-export interface DbReflection {
-  id: string;
-  client_id: string;
-  session_id: string | null;
-  quest_id: string | null;
-  before_emotion: string | null;
-  after_emotion: string | null;
-  notes: string | null;
-  ai_feedback: unknown | null;
-  created_at: string;
-}
-
-export interface Reflection {
-  id: string;
-  date: string;
-  sessionId: string | null;
-  questId: string | null;
-  questTitle: string | null;
-  beforeEmotion: string;
-  afterEmotion: string;
-  notes: string;
-  createdAt: string;
-}
+export type { Reflection } from "@/types/reflection";
+import type { Reflection } from "@/types/reflection";
+import type { DbReflection, DbReflectionWithQuest } from "@/types/db/reflection";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -64,8 +45,7 @@ function fromDbRow(
 
 const PAGE_SIZE = 3;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DbRowWithQuest = DbReflection & { quests: { title: string } | null };
+type DbRowWithQuest = DbReflectionWithQuest;
 
 /** 회고 목록 조회 (최신순) */
 export async function fetchReflections(): Promise<Reflection[]> {
@@ -75,7 +55,7 @@ export async function fetchReflections(): Promise<Reflection[]> {
     .select("*, quests(title)")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return (data as DbRowWithQuest[]).map((row) =>
     fromDbRow(row, row.quests?.title),
   );
@@ -92,7 +72,7 @@ export async function fetchReflectionPage(
     .order("created_at", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   const rows = (data as DbRowWithQuest[]).map((row) =>
     fromDbRow(row, row.quests?.title),
   );
@@ -126,7 +106,7 @@ export async function insertReflection(params: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw dbError(error);
 
   // 플로우 완주 판정: questId로부터 session_id를 찾아 reflected 처리
   const sessionId = params.sessionId;
@@ -157,7 +137,7 @@ export async function fetchReflectionBySession(
     .eq("session_id", sessionId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return data ? fromDbRow(data as DbReflection) : null;
 }
 
@@ -179,12 +159,12 @@ export async function updateReflection(
       notes: params.notes,
     })
     .eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 회고 삭제 */
 export async function deleteReflection(id: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("reflections").delete().eq("id", id);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }

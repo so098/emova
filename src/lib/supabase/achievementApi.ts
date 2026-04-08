@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { authError, dbError } from "@/lib/errors";
 
 /* ── 인증 헬퍼 ── */
 
@@ -7,24 +8,15 @@ async function getClientId(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
 /* ── 타입 ── */
 
-export interface UnlockedAchievement {
-  id: string;
-  achievementKey: string;
-  unlockedAt: string;
-}
-
-interface DbAchievementRow {
-  id: string;
-  client_id: string;
-  achievement_key: string;
-  unlocked_at: string;
-}
+export type { UnlockedAchievement } from "@/types/reward";
+import type { UnlockedAchievement } from "@/types/reward";
+import type { DbAchievementRow } from "@/types/db/reward";
 
 /* ── CRUD ── */
 
@@ -37,7 +29,7 @@ export async function fetchUnlocked(): Promise<UnlockedAchievement[]> {
     .select("*")
     .order("unlocked_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return (data as DbAchievementRow[]).map((row) => ({
     id: row.id,
     achievementKey: row.achievement_key,
@@ -64,7 +56,7 @@ export async function unlockAchievement(
   if (error) {
     // 이미 존재하는 경우 (ignoreDuplicates)
     if (error.code === "PGRST116") return null;
-    throw error;
+    throw dbError(error);
   }
 
   return data

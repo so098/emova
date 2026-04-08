@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   LineChart, Line,
 } from "recharts";
-import type { DashboardData } from "@/lib/supabase/dashboardApi";
+import type { DashboardData } from "@/types/dashboard";
 
 const STATUS_COLORS: Record<string, string> = {
   in_progress: "#FFA900",

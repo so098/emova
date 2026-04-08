@@ -1,13 +1,15 @@
 import { createClient } from "./client";
+import { authError, dbError } from "@/lib/errors";
 
-export type FeedbackCategory = "bug" | "feature" | "general";
+export type { FeedbackCategory } from "@/types/feedback";
+import type { FeedbackCategory } from "@/types/feedback";
 
 async function getClientId(): Promise<string> {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
@@ -26,5 +28,5 @@ export async function insertFeedback(params: {
     rating: params.rating ?? null,
   });
 
-  if (error) throw error;
+  if (error) throw dbError(error);
 }

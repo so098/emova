@@ -1,6 +1,11 @@
 import { createClient } from "./server";
-import type { QuestState, Quest } from "@/store/questStore";
-import type { UnlockedAchievement } from "./achievementApi";
+import { AppError } from "@/lib/errors";
+import type { QuestState, Quest } from "@/types/quest";
+import type { UnlockedAchievement } from "@/types/reward";
+import type { Reflection } from "@/types/reflection";
+import type { DbQuestRow } from "@/types/db/quest";
+import type { DbAchievementRow } from "@/types/db/reward";
+import type { DbReflectionWithQuest } from "@/types/db/reflection";
 
 /**
  * 서버 컴포넌트용 read-only 쿼리 함수들.
@@ -21,19 +26,6 @@ function toKSTDateString(iso: string): string {
 }
 
 /* ── 퀘스트 ── */
-
-interface DbQuestRow {
-  id: string;
-  title: string;
-  description: string | null;
-  source: string;
-  status: string;
-  xp_reward: number;
-  created_at: string;
-  parent_id: string | null;
-  category: string;
-  origin_category: string | null;
-}
 
 export async function prefetchQuests(): Promise<QuestState> {
   const empty: QuestState = { 단기: [], 장기: [], 보류: [] };
@@ -72,18 +64,15 @@ export async function prefetchQuests(): Promise<QuestState> {
       }
     }
     return state;
-  } catch {
+  } catch (e) {
+    if (!(e instanceof AppError && e.code === "UNAUTHENTICATED")) {
+      console.error("[serverQueries] prefetchQuests:", e);
+    }
     return empty;
   }
 }
 
 /* ── 업적 ── */
-
-interface DbAchievementRow {
-  id: string;
-  achievement_key: string;
-  unlocked_at: string;
-}
 
 export async function prefetchUnlockedAchievements(): Promise<UnlockedAchievement[]> {
   try {
@@ -102,7 +91,10 @@ export async function prefetchUnlockedAchievements(): Promise<UnlockedAchievemen
       achievementKey: row.achievement_key,
       unlockedAt: row.unlocked_at,
     }));
-  } catch {
+  } catch (e) {
+    if (!(e instanceof AppError && e.code === "UNAUTHENTICATED")) {
+      console.error("[serverQueries] prefetchUnlockedAchievements:", e);
+    }
     return [];
   }
 }
@@ -141,38 +133,17 @@ export async function prefetchStreak(): Promise<number> {
       else break;
     }
     return streak;
-  } catch {
+  } catch (e) {
+    if (!(e instanceof AppError && e.code === "UNAUTHENTICATED")) {
+      console.error("[serverQueries] prefetchStreak:", e);
+    }
     return 0;
   }
 }
 
 /* ── 회고 ── */
 
-interface DbReflection {
-  id: string;
-  session_id: string | null;
-  quest_id: string | null;
-  before_emotion: string | null;
-  after_emotion: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
-type DbRowWithQuest = DbReflection & { quests: { title: string } | null };
-
-export interface ReflectionSummary {
-  id: string;
-  date: string;
-  sessionId: string | null;
-  questId: string | null;
-  questTitle: string | null;
-  beforeEmotion: string;
-  afterEmotion: string;
-  notes: string;
-  createdAt: string;
-}
-
-export async function prefetchReflections(): Promise<ReflectionSummary[]> {
+export async function prefetchReflections(): Promise<Reflection[]> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -184,7 +155,7 @@ export async function prefetchReflections(): Promise<ReflectionSummary[]> {
       .order("created_at", { ascending: false });
 
     if (error) return [];
-    return (data as DbRowWithQuest[]).map((row) => ({
+    return (data as DbReflectionWithQuest[]).map((row) => ({
       id: row.id,
       date: formatDate(row.created_at),
       sessionId: row.session_id,
@@ -195,7 +166,10 @@ export async function prefetchReflections(): Promise<ReflectionSummary[]> {
       notes: row.notes ?? "",
       createdAt: row.created_at,
     }));
-  } catch {
+  } catch (e) {
+    if (!(e instanceof AppError && e.code === "UNAUTHENTICATED")) {
+      console.error("[serverQueries] prefetchReflections:", e);
+    }
     return [];
   }
 }

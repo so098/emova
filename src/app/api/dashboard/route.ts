@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import type { SessionStatus } from "@/lib/supabase/movaFlowApi";
+import type { SessionStatus } from "@/types/session";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,10 +15,14 @@ export async function GET() {
     supabase.from("survey_thought").select("id, client_id, key, custom_text"),
   ]);
 
-  if (sessionsRes.error) return NextResponse.json({ error: sessionsRes.error.message }, { status: 500 });
-  if (questsRes.error) return NextResponse.json({ error: questsRes.error.message }, { status: 500 });
-  if (emotionsRes.error) return NextResponse.json({ error: emotionsRes.error.message }, { status: 500 });
-  if (thoughtsRes.error) return NextResponse.json({ error: thoughtsRes.error.message }, { status: 500 });
+  for (const res of [sessionsRes, questsRes, emotionsRes, thoughtsRes]) {
+    if (res.error) {
+      return NextResponse.json(
+        { error: res.error.message, code: "DB_ERROR" },
+        { status: 500 },
+      );
+    }
+  }
 
   const EXCLUDED_CLIENTS = ["7cdf15a3", "845f843a"];
 

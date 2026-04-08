@@ -1,6 +1,8 @@
 import { createClient } from "./client";
+import { authError, dbError } from "@/lib/errors";
+import type { SessionStatus } from "@/types/session";
 
-export type SessionStatus = "in_progress" | "completed" | "reflected" | "aborted";
+export type { SessionStatus } from "@/types/session";
 
 /* ── 인증 헬퍼 ── */
 
@@ -9,7 +11,7 @@ async function getClientId(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
@@ -24,7 +26,7 @@ export async function createSession(): Promise<string> {
     .insert({ client_id: clientId, status: "in_progress" as SessionStatus })
     .select("id")
     .single();
-  if (error) throw error;
+  if (error) throw dbError(error);
   return data.id;
 }
 
@@ -42,7 +44,7 @@ export async function saveThought(
     key,
     custom_text: customText ?? null,
   });
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 감정 저장 */
@@ -61,7 +63,7 @@ export async function saveEmotion(
     intensity,
     custom_text: customText ?? null,
   });
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 욕구/질문 답변 저장 */
@@ -81,7 +83,7 @@ export async function saveDesires(
     end_of_day_feel: endOfDayFeel ?? null,
     is_wrote: desiredAction.trim().length > 0,
   });
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 추천 행동 저장 (여러 개) */
@@ -100,7 +102,7 @@ export async function saveActions(
     is_selected: a.selected,
   }));
   const { error } = await supabase.from("survey_actions").insert(rows);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 세션 완료 */
@@ -110,7 +112,7 @@ export async function completeSession(sessionId: string): Promise<void> {
     .from("survey_sessions")
     .update({ status: "completed" as SessionStatus, completed_at: new Date().toISOString() })
     .eq("id", sessionId);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 세션 중단 */
@@ -120,7 +122,7 @@ export async function abortSession(sessionId: string): Promise<void> {
     .from("survey_sessions")
     .update({ status: "aborted" as SessionStatus, aborted_at: new Date().toISOString() })
     .eq("id", sessionId);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 세션 회고 완료 */
@@ -130,7 +132,7 @@ export async function reflectSession(sessionId: string): Promise<void> {
     .from("survey_sessions")
     .update({ status: "reflected" as SessionStatus })
     .eq("id", sessionId);
-  if (error) throw error;
+  if (error) throw dbError(error);
 }
 
 /** 진행 중인 세션 조회 */
@@ -145,7 +147,7 @@ export async function fetchActiveSession(): Promise<string | null> {
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw dbError(error);
   return data?.id ?? null;
 }
 

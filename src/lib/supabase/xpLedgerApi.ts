@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { authError, dbError } from "@/lib/errors";
 
 /* ── 인증 헬퍼 ── */
 
@@ -7,34 +8,15 @@ async function getClientId(): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) throw authError();
   return user.id;
 }
 
 /* ── 타입 ── */
 
-export type LedgerType = "xp" | "points";
-
-export interface LedgerEntry {
-  id: string;
-  type: LedgerType;
-  delta: number;
-  reason: string;
-  questId: string | null;
-  sessionId: string | null;
-  createdAt: string;
-}
-
-interface DbLedgerRow {
-  id: string;
-  client_id: string;
-  type: string;
-  delta: number;
-  reason: string;
-  quest_id: string | null;
-  session_id: string | null;
-  created_at: string;
-}
+export type { LedgerType, LedgerEntry } from "@/types/reward";
+import type { LedgerType, LedgerEntry } from "@/types/reward";
+import type { DbLedgerRow } from "@/types/db/reward";
 
 function fromDbRow(row: DbLedgerRow): LedgerEntry {
   return {
@@ -74,7 +56,7 @@ export async function insertTransaction(params: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return fromDbRow(data as DbLedgerRow);
 }
 
@@ -87,7 +69,7 @@ export async function fetchTotal(type: LedgerType): Promise<number> {
     .select("delta")
     .eq("type", type);
 
-  if (error) throw error;
+  if (error) throw dbError(error);
   return (data as { delta: number }[]).reduce((sum, row) => sum + row.delta, 0);
 }
 
@@ -99,7 +81,7 @@ export async function fetchTotals(): Promise<{ xp: number; points: number }> {
     .from("xp_ledger")
     .select("type, delta");
 
-  if (error) throw error;
+  if (error) throw dbError(error);
 
   let xp = 0;
   let points = 0;
@@ -126,6 +108,6 @@ export async function fetchHistory(
   if (type) query = query.eq("type", type);
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) throw dbError(error);
   return (data as DbLedgerRow[]).map(fromDbRow);
 }

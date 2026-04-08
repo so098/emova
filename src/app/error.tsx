@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AppError } from "@/lib/errors";
 
 export default function Error({
   error,
@@ -11,7 +12,11 @@ export default function Error({
   const router = useRouter();
 
   useEffect(() => {
-    console.error(error);
+    if (error instanceof AppError) {
+      console.error(`[AppError] ${error.code}:`, error.message);
+    } else {
+      console.error("[UnhandledError]:", error);
+    }
     router.replace("/");
   }, [error, router]);
 
