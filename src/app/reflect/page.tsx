@@ -1,4 +1,4 @@
-import ReflectPage from "@/features/reflect/ReflectPage";
+import ReflectPage from "@/features/reflect/components/ReflectPage";
 
 export default function ReflectRoute() {
   return (

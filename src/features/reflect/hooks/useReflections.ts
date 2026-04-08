@@ -1,16 +1,13 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as reflectionApi from "@/lib/supabase/reflectionApi";
-
-const REFLECTION_KEY = ["reflections"] as const;
+import { REFLECTION_KEY } from "@/lib/query/queryKeys";
 
 export function useReflections() {
-  return useInfiniteQuery({
+  return useQuery({
     queryKey: REFLECTION_KEY,
-    queryFn: ({ pageParam }) => reflectionApi.fetchReflectionPage(pageParam),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    queryFn: reflectionApi.fetchReflections,
   });
 }
 

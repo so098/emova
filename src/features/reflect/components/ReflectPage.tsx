@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun } from "lucide-react";
-import { useToast } from "@/components/ToastStack";
-import { useInsertReflection, useUpdateReflection, useDeleteReflection } from "./useReflections";
+import { useToast } from "@/components/feedback/ToastStack";
+import { useInsertReflection, useUpdateReflection, useDeleteReflection } from "../hooks/useReflections";
+import { useReflectRewards } from "../hooks/useReflectRewards";
 import ReflectEntryList from "./ReflectEntryList";
+import ReflectSummaryModal from "./ReflectSummaryModal";
+import ReflectDeleteModal from "./ReflectDeleteModal";
+import type { SummaryData } from "./ReflectSummaryModal";
 import type { Reflection } from "@/lib/supabase/reflectionApi";
-import * as xpLedgerApi from "@/lib/supabase/xpLedgerApi";
-import { useRewardStore } from "@/store/rewardStore";
 
 const EMOTION_LABELS = [
   "불안", "무기력", "짜증", "혼란", "외로움",
@@ -36,13 +37,6 @@ const GUIDED_QUESTIONS = [
     placeholder: "감정의 변화나 그대로인 이유를 적어주세요",
   },
 ];
-
-interface SummaryData {
-  emotionBefore: string;
-  emotionAfter: string;
-  oneLiner: string;
-  xp: number;
-}
 
 function EmotionPills({
   label,
@@ -82,14 +76,11 @@ function EmotionPills({
 
 export default function ReflectPage() {
   const searchParams = useSearchParams();
-  const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
-  const scrollRef = useCallback((node: HTMLDivElement | null) => {
-    setScrollParent(node);
-  }, []);
   const insertReflection = useInsertReflection();
   const updateReflection = useUpdateReflection();
   const deleteReflection = useDeleteReflection();
   const { showToast } = useToast();
+  const { grantRewards } = useReflectRewards();
 
   const [isWriting, setIsWriting] = useState(false);
   const [step, setStep] = useState<Step>(0);
@@ -204,21 +195,18 @@ export default function ReflectPage() {
         notes: text,
       },
       {
-        onSuccess: () => {
-          // XP 기록
-          useRewardStore.getState().addXP(20);
-          xpLedgerApi.insertTransaction({
-            type: "xp",
-            delta: 20,
-            reason: "회고 작성",
-          }).catch((e) => console.error("Failed to record reflection XP:", e));
-
-          setSummary({
-            emotionBefore: beforeEmotions.join(", ") || "—",
-            emotionAfter: afterEmotions.join(", "),
-            oneLiner,
-            xp: 20,
-          });
+        onSuccess: async () => {
+          try {
+            const totalXP = await grantRewards();
+            setSummary({
+              emotionBefore: beforeEmotions.join(", ") || "—",
+              emotionAfter: afterEmotions.join(", "),
+              oneLiner,
+              xp: totalXP,
+            });
+          } catch (e) {
+            console.error("Failed to record reflection XP:", e);
+          }
           resetForm();
         },
         onError: () => {
@@ -265,93 +253,18 @@ export default function ReflectPage() {
       {/* 요약 오버레이 */}
       <AnimatePresence>
         {summary && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSummary(null)}
-              className="fixed inset-0 z-40 bg-black/30"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 20 }}
-              transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[26rem] -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface"
-            >
-              <div className="flex flex-col items-center gap-2 bg-brand-primary px-6 pt-8 pb-6">
-                <Sun size={32} strokeWidth={1.8} color="var(--on-accent)" />
-                <span className="text-lg font-bold text-on-accent">오늘 하루, 고생했어요</span>
-              </div>
-              <div className="flex flex-col gap-5 px-6 pt-5 pb-6">
-                <div className="flex items-center justify-center gap-2.5 text-sm">
-                  <span className="rounded-full bg-surface-elevated px-3 py-1.5 font-medium text-text-muted">
-                    {summary.emotionBefore}
-                  </span>
-                  <span className="text-xs text-text-faint">→</span>
-                  <span className="rounded-full bg-accent-green-bg px-3 py-1.5 font-medium text-accent-green-text">
-                    {summary.emotionAfter}
-                  </span>
-                </div>
-                <p className="text-center text-sm leading-relaxed text-text-secondary">
-                  &ldquo;{summary.oneLiner}&rdquo;
-                </p>
-                <div className="h-px bg-surface-elevated" />
-                <div className="flex items-center justify-between rounded-[0.875rem] bg-accent-gold-bg-light px-4 py-3">
-                  <span className="text-sm text-text-muted">경험치</span>
-                  <span className="text-sm font-bold text-accent-gold">+{summary.xp} XP</span>
-                </div>
-                <p className="text-center text-xs text-text-subtle">내일 또 봐요.</p>
-                <button
-                  onClick={() => setSummary(null)}
-                  className="bg-brand-primary w-full rounded-full py-3 text-sm font-bold text-on-accent"
-                >
-                  닫기
-                </button>
-              </div>
-            </motion.div>
-          </>
+          <ReflectSummaryModal summary={summary} onClose={() => setSummary(null)} />
         )}
       </AnimatePresence>
 
       {/* 삭제 확인 모달 */}
       <AnimatePresence>
         {deleteTarget && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDeleteTarget(null)}
-              className="fixed inset-0 z-40 bg-black/30"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 20 }}
-              transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto flex max-w-[22rem] -translate-y-1/2 flex-col gap-4 rounded-2xl border border-border-default bg-surface px-6 py-6"
-            >
-              <span className="text-sm font-bold text-text-primary">정말 삭제하시겠습니까?</span>
-              <p className="text-xs text-text-muted">삭제하면 되돌릴 수 없어요.</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDeleteTarget(null)}
-                  className="flex-1 rounded-full bg-surface-elevated py-2.5 text-sm font-medium text-text-muted"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleteReflection.isPending}
-                  className="flex-1 rounded-full bg-accent-red py-2.5 text-sm font-bold text-white"
-                >
-                  {deleteReflection.isPending ? "삭제 중..." : "삭제"}
-                </button>
-              </div>
-            </motion.div>
-          </>
+          <ReflectDeleteModal
+            isPending={deleteReflection.isPending}
+            onConfirm={handleDelete}
+            onCancel={() => setDeleteTarget(null)}
+          />
         )}
       </AnimatePresence>
 
@@ -536,7 +449,7 @@ export default function ReflectPage() {
               <button
                 onClick={() => setStep((s) => (s + 1) as Step)}
                 disabled={!canGoNext()}
-                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-accent transition-opacity disabled:opacity-40"
+                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-point transition-opacity disabled:opacity-40"
               >
                 다음
               </button>
@@ -544,7 +457,7 @@ export default function ReflectPage() {
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit() || insertReflection.isPending || updateReflection.isPending}
-                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-accent transition-opacity disabled:opacity-40"
+                className="bg-point flex-1 rounded-full py-3 text-sm font-bold text-on-point transition-opacity disabled:opacity-40"
               >
                 {(insertReflection.isPending || updateReflection.isPending)
                   ? "저장 중..."
@@ -565,8 +478,8 @@ export default function ReflectPage() {
 
       {/* 회고 목록 */}
       {!isWriting && (
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-          <ReflectEntryList scrollParent={scrollParent} onEdit={startEdit} onDelete={confirmDelete} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <ReflectEntryList onEdit={startEdit} onDelete={confirmDelete} />
         </div>
       )}
     </div>
