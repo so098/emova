@@ -3,6 +3,7 @@
 import { useState, useEffect, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 
 interface Step {
   target: string;
@@ -29,8 +30,6 @@ const ALL_STEPS: Step[] = [
     position: "bottom",
   },
 ];
-
-const STORAGE_KEY = "emova_onboarding_done";
 
 function getVisibleSteps(): Step[] {
   return ALL_STEPS.filter(
@@ -85,22 +84,36 @@ export default function Onboarding() {
       setActive(false);
       return;
     }
-    // TODO: 배포 시 localStorage 체크 복원
-    // if (localStorage.getItem(STORAGE_KEY)) return;
-    let attempts = 0;
-    const tryStart = () => {
-      const visible = getVisibleSteps();
-      if (visible.length > 0) {
-        setSteps(visible);
-        setStepIndex(0);
-        setActive(true);
-        return;
-      }
-      attempts++;
-      if (attempts < 10) timer = setTimeout(tryStart, 300);
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (user?.user_metadata?.onboarding_done) return;
+
+      let attempts = 0;
+      const tryStart = () => {
+        if (cancelled) return;
+        const visible = getVisibleSteps();
+        if (visible.length > 0) {
+          setSteps(visible);
+          setStepIndex(0);
+          setActive(true);
+          return;
+        }
+        attempts++;
+        if (attempts < 10) timer = setTimeout(tryStart, 300);
+      };
+      timer = setTimeout(tryStart, 500);
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
     };
-    let timer = setTimeout(tryStart, 500);
-    return () => clearTimeout(timer);
   }, [pathname]);
 
   useLayoutEffect(() => {
@@ -123,7 +136,8 @@ export default function Onboarding() {
   const handleNext = () => {
     if (stepIndex + 1 >= steps.length) {
       setActive(false);
-      localStorage.setItem(STORAGE_KEY, "true");
+      const supabase = createClient();
+      supabase.auth.updateUser({ data: { onboarding_done: true } });
     } else {
       setStepIndex((i) => i + 1);
     }
