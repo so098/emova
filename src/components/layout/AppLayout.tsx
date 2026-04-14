@@ -25,12 +25,9 @@ export default function AppLayout() {
       {!hideNav && <HeaderBar />}
       {!hideNav && <NavMenu />}
       {!hideBottomBar && <BottomBar />}
-      {pathname.startsWith(ROUTES.QUESTION) && (
+      {pathname.startsWith(ROUTES.QUESTION) && pathname !== ROUTES.QUESTION && (
         <div className="fixed bottom-[7rem] left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2">
-          {pathname !== ROUTES.QUESTION && (
-            <SkipLink href={ROUTES.QUESTION} label="질문 다시 고르기" />
-          )}
-          <SkipLink href={ROUTES.RECOMMEND} />
+          <SkipLink href={ROUTES.QUESTION} label="질문 다시 고르기" />
         </div>
       )}
       {/* 모바 플로우 — 데스크톱 세션 사이드 패널 */}

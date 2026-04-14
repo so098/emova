@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
 import { fetchRecommendations, type Recommendation } from "@/app/recommend/actions";
 import { ROUTES } from "@/constants/routes";
 import CelebrationToast from "@/components/feedback/CelebrationToast";
@@ -11,6 +12,11 @@ import { useSessionStore } from "@/store/sessionStore";
 import { useToast } from "@/components/feedback/ToastStack";
 import { useAddQuests } from "@/features/quest/hooks/useQuests";
 import { useFinishFlow } from "@/features/flow/useFlowMutations";
+import ScrollFadeBox from "@/components/ui/ScrollFadeBox";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+
+const INITIAL_COUNT = 3;
+const STEP = 3;
 
 interface RecommendListProps {
   questionLabel: string;
@@ -25,6 +31,7 @@ export default function RecommendList({
 }: RecommendListProps) {
   const router = useRouter();
   const [items, setItems] = useState<Recommendation[]>(initial);
+  const [visible, setVisible] = useState(INITIAL_COUNT);
   const [selected, setSelected] = useState<number[]>([]);
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState("");
@@ -45,6 +52,10 @@ export default function RecommendList({
 
   const handleDone = async () => {
     if (isSaving) return;
+    if (selected.length === 0 && !customValue.trim()) {
+      showErrorToast("선택해주세요", "");
+      return;
+    }
     setIsSaving(true);
 
     // 선택한 추천 + 직접 입력을 퀘스트 store에 추가
@@ -107,8 +118,11 @@ export default function RecommendList({
       const next = await fetchRecommendations(questionLabel, questionText);
       setItems(next);
       setSelected([]);
+      setVisible(INITIAL_COUNT);
     });
   };
+
+  const showMore = () => setVisible((v) => Math.min(v + STEP, items.length));
 
   return (
     <>
@@ -119,25 +133,25 @@ export default function RecommendList({
         duration={3000}
       />
 
-      <div className="flex h-[calc(100dvh-10rem)] w-full max-w-[26rem] flex-col gap-4">
+      <div className="flex h-[calc(100dvh-13rem)] w-full max-w-[26rem] flex-col gap-4">
         {/* 타이틀 (고정) */}
         <p className="shrink-0 text-base font-bold leading-snug text-text-primary">
           이 감정을 행동으로 바꾸는 건 쉽지 않지만 괜찮아요, 작게 시작해볼 수 있어요
           <span className="ml-1 text-sm font-normal text-text-muted">(중복 선택 가능)</span>
         </p>
 
-        {/* 추천 목록 (스크롤) */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+        {/* AI 추천 목록 (스크롤) */}
+        <ScrollFadeBox className="flex min-h-0 flex-1 flex-col gap-2">
           {isPending
-            ? Array.from({ length: 6 }).map((_, i) => (
+            ? Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-[4.5rem] shrink-0 animate-pulse rounded-2xl bg-surface-elevated" />
               ))
-            : items.map((item, i) => (
+            : items.slice(0, visible).map((item, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
+                  transition={{ delay: i < INITIAL_COUNT ? i * 0.08 : 0.05 * (i - visible + STEP) }}
                   onClick={() => handleSelect(i)}
                   className="flex shrink-0 cursor-pointer items-center gap-3 rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-lg transition-colors"
                   style={{
@@ -157,45 +171,54 @@ export default function RecommendList({
                   </div>
                 </motion.div>
               ))}
+        </ScrollFadeBox>
 
-          {/* 직접 입력 */}
-          <div
-            onClick={() => setCustomOpen((v) => !v)}
-            className="flex shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-surface-card-glass px-4 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
-            style={{ border: customOpen ? "1px solid var(--ui-button-primary)" : "1px solid transparent" }}
-          >
-            <span className="text-sm text-text-muted">직접 입력하기</span>
-          </div>
-          {customOpen && (
-            <input
-              type="text"
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              placeholder="직접 적어보세요"
-              autoFocus
-              className="shrink-0 rounded-xl border border-border-default bg-surface px-4 py-3 text-sm outline-none placeholder:text-text-faint focus:border-brand-primary"
-            />
-          )}
-
-
-        </div>
-
-        {/* 하단 버튼 (고정) */}
-        <div className="flex shrink-0 gap-3">
+        {/* 추천 더 보기 (스크롤 밖, 항상 보임) */}
+        {!isPending && visible < items.length && (
           <button
-            onClick={() => router.push(ROUTES.HOME)}
-            className="flex-1 rounded-xl border border-border-default bg-surface py-3 text-sm text-text-secondary transition-colors hover:border-brand-primary"
+            onClick={showMore}
+            className="shrink-0 self-center text-sm font-semibold text-text-muted transition-colors hover:text-brand-primary"
           >
-            오늘은 이만 넘어갈게요
+            추천 더 보기
           </button>
-          <button
-            onClick={handleDone}
-            disabled={isSaving}
-            className="flex-1 rounded-xl bg-brand-primary py-3 text-sm font-bold text-on-accent transition-opacity hover:opacity-85 disabled:opacity-50"
-          >
-            {isSaving ? "저장 중..." : "다 했어요"}
-          </button>
+        )}
+
+        {/* 직접 입력 (스크롤 밖, 항상 보임) */}
+        <div
+          onClick={() => setCustomOpen((v) => !v)}
+          className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-3 transition-colors"
+          style={{
+            border: customOpen
+              ? "1px solid var(--ui-button-primary)"
+              : "1.5px dashed var(--border-default)",
+            background: customOpen ? "var(--surface-card-glass)" : "transparent",
+          }}
+        >
+          <Plus size={16} strokeWidth={2.5} className="text-text-secondary" />
+          <span className="text-sm font-semibold text-text-secondary">직접 입력하기</span>
         </div>
+        {customOpen && (
+          <input
+            type="text"
+            value={customValue}
+            onChange={(e) => setCustomValue(e.target.value)}
+            placeholder="직접 적어보세요"
+            autoFocus
+            className="shrink-0 rounded-xl border border-border-default bg-surface px-4 py-3 text-sm outline-none placeholder:text-text-faint focus:border-brand-primary"
+          />
+        )}
+
+      </div>
+
+      {/* 하단 버튼 (BottomBar와 동일 위치) */}
+      <div className="fixed bottom-8 left-1/2 z-20 w-full max-w-(--ui-content-width) -translate-x-1/2 px-4">
+        <PrimaryButton
+          onClick={handleDone}
+          disabled={isSaving}
+          className="w-full"
+        >
+          {isSaving ? "저장 중..." : "다 했어요"}
+        </PrimaryButton>
       </div>
     </>
   );

@@ -20,7 +20,7 @@ const TABS: Tab[] = ["단기", "장기", "보류"];
 export default function QuestPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialTab = (searchParams.get("tab") as Tab) || "장기";
+  const initialTab = (searchParams.get("tab") as Tab) || "단기";
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalQuestId, setModalQuestId] = useState<string | null>(null);
