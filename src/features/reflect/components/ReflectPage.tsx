@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/feedback/ToastStack";
 import { useInsertReflection, useUpdateReflection, useDeleteReflection } from "../hooks/useReflections";
 import { useReflectRewards } from "../hooks/useReflectRewards";
+import { Link2, X as XIcon } from "lucide-react";
 import ReflectEntryList from "./ReflectEntryList";
 import ReflectSummaryModal from "./ReflectSummaryModal";
 import ReflectDeleteModal from "./ReflectDeleteModal";
+import QuestPickerModal from "./QuestPickerModal";
 import type { SummaryData } from "./ReflectSummaryModal";
 import type { Reflection } from "@/lib/supabase/reflectionApi";
 
@@ -92,6 +94,7 @@ export default function ReflectPage() {
   const [linkedQuestMemo, setLinkedQuestMemo] = useState<string | null>(null);
   const [editingReflection, setEditingReflection] = useState<Reflection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [questPickerOpen, setQuestPickerOpen] = useState(false);
 
   // 퀘스트 완료 후 MoodCheckModal에서 넘어온 경우 또는 퀘스트에서 회고하러 가기
   const hasInitRef = useRef(false);
@@ -268,6 +271,21 @@ export default function ReflectPage() {
         )}
       </AnimatePresence>
 
+      {/* 완료한 퀘스트 선택 모달 */}
+      <AnimatePresence>
+        {questPickerOpen && (
+          <QuestPickerModal
+            onSelect={(quest) => {
+              setLinkedQuestId(quest.id);
+              setLinkedQuestTitle(quest.title);
+              setLinkedQuestMemo(quest.memo ?? null);
+              setQuestPickerOpen(false);
+            }}
+            onCancel={() => setQuestPickerOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-text-primary">
@@ -283,22 +301,43 @@ export default function ReflectPage() {
         )}
       </div>
 
-      {/* 연동된 퀘스트 + 실행 메모 표시 */}
-      {isWriting && linkedQuestTitle && (
-        <div className="flex flex-col gap-1.5 rounded-xl bg-accent-gold-bg-light px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted">연동 퀘스트</span>
-            <span className="max-w-[16rem] truncate text-xs font-semibold text-interactive">
-              {linkedQuestTitle}
-            </span>
-          </div>
-          {linkedQuestMemo && (
-            <div className="flex flex-col gap-0.5 border-t border-accent-gold/20 pt-1.5">
-              <span className="text-[0.625rem] font-semibold text-text-faint">실행 전 다짐</span>
-              <p className="text-xs leading-relaxed text-text-muted">{linkedQuestMemo}</p>
+      {/* 연동된 퀘스트 + 실행 메모 표시 / 연결 버튼 */}
+      {isWriting && !editingReflection && (
+        linkedQuestTitle ? (
+          <div className="flex flex-col gap-1.5 rounded-xl bg-accent-gold-bg-light px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">연동 퀘스트</span>
+              <span className="max-w-[14rem] truncate text-xs font-semibold text-interactive">
+                {linkedQuestTitle}
+              </span>
+              <button
+                onClick={() => {
+                  setLinkedQuestId(null);
+                  setLinkedQuestTitle(null);
+                  setLinkedQuestMemo(null);
+                }}
+                className="ml-auto text-text-muted hover:text-text-primary"
+                aria-label="연동 해제"
+              >
+                <XIcon size={14} strokeWidth={2} />
+              </button>
             </div>
-          )}
-        </div>
+            {linkedQuestMemo && (
+              <div className="flex flex-col gap-0.5 border-t border-accent-gold/20 pt-1.5">
+                <span className="text-[0.625rem] font-semibold text-text-faint">실행 전 다짐</span>
+                <p className="text-xs leading-relaxed text-text-muted">{linkedQuestMemo}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setQuestPickerOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border-default px-4 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-brand-primary hover:text-text-primary"
+          >
+            <Link2 size={14} strokeWidth={2} />
+            완료한 퀘스트 연결하기
+          </button>
+        )
       )}
 
       {/* 스텝 폼 */}
