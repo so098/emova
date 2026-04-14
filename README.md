@@ -52,6 +52,18 @@
 - 데스크톱/모바일 반응형 레이아웃
 - 외부 UI 라이브러리 없이 Tailwind + Framer Motion으로 직접 구현
 
+### Dashboard
+`/dashboard` 페이지와 `/api/dashboard` 라우트로 사용량 지표를 집계하며, 실제 사용량을 보고 지표 구성과 UI를 수정 중입니다. recharts 기반으로 구현되어 있습니다.
+
+- **KPI 카드** : 총 세션 생성 기기, 총 세션, 루프 완주율(회고 도달률), 총 퀘스트
+- **감정 / 생각 선택 분포** : `survey_emotions`, `survey_thought`의 선택 key별 집계를 BarChart로 표시 (`custom`은 `custom_text`로 치환)
+- **루프 완주 퍼널** : 세션 시작 → 플로우 완료(`completed` | `reflected`) → 회고 완료(`reflected`) 3단계 전환율
+- **기기별 완주율** : `client_id`별 플로우 완주율(`flowRate`)과 루프 완주율(`loopRate`)
+- **기기별 접속 기록** : `client_id`별 첫 접속, 마지막 접속, 세션 수, 활동 시간대
+- **세션 추이** : 일별(Line) / 월별(Bar) 토글 전환
+- **퀘스트 상태 분포** : `pending` / `in_progress` / `done` / `expired` 비율 PieChart
+- **내부 테스트 기기 필터** : `EXCLUDED_CLIENTS`로 지정된 `client_id` prefix는 집계에서 제외
+
 ## 설계 의사결정
 
 ### 세션 중심 데이터 모델
