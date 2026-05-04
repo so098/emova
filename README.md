@@ -3,6 +3,13 @@
 > 감정을 출발점으로 실행 루틴을 설계하는 웹앱.  
 > 미션 -> 실행 -> 회고 -> 성장 루프를 통해 자기효능감을 회복합니다.
 
+## 스크린샷
+
+| | |
+|---|---|
+| ![](public/screenshots/home.png) | ![](public/screenshots/quest.png) |
+| ![](public/screenshots/reflect.png) | ![](public/screenshots/info.png) |
+
 ## 핵심 플로우
 
 ```
