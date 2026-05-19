@@ -56,7 +56,6 @@
 ### 디자인 시스템
 - CSS 변수 기반 디자인 토큰 (색상, 레이아웃, 간격)
 - 다크모드 지원 (CSS 변수 스위칭 + localStorage 영속)
-- 데스크톱/모바일 반응형 레이아웃
 - 외부 UI 라이브러리 없이 Tailwind + Framer Motion으로 직접 구현
 
 ### Dashboard

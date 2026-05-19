@@ -49,6 +49,10 @@ export default function RootLayout({
         <Onboarding />
         </AuthProvider>
         </QueryProvider>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-2 bg-background px-6 text-center lg:hidden">
+          <p className="text-xl font-semibold">이 화면은 준비중이에요</p>
+          <p className="text-sm opacity-60">데스크톱에서 접속해 주세요</p>
+        </div>
       </body>
     </html>
   );
